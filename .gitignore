@@ -1,0 +1,8 @@
+node_modules/
+Database/
+dist/
+license/private.key
+css/app.css
+*.log
+.DS_Store
+Thumbs.db

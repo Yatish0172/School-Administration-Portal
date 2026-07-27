@@ -1,0 +1,303 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --------------------------------------------------------------------------
+ * Fonts — vendored, never fetched.
+ *
+ * Drop the two .woff2 files below into fonts/ and they take effect with no other
+ * change. Until then the stacks fall back to fonts Windows already has, so the app
+ * is fully usable and correctly laid out without them. There is deliberately no
+ * @import and no link to Google Fonts anywhere: the school PC has no internet.
+ *
+ *   fonts/Fraunces-Variable.woff2   (display / headings)
+ *   fonts/Inter-Variable.woff2      (body)
+ *
+ * Icons are NOT a font. They are inline SVG (js/icons.js), because a missing icon
+ * font renders each glyph's ligature name as visible text — "dashboard" beside
+ * every menu item — and that failure is both ugly and easy to ship unnoticed.
+ * ------------------------------------------------------------------------ */
+
+@font-face {
+  font-family: 'Fraunces';
+  src: url('../fonts/Fraunces-Variable.woff2') format('woff2-variations');
+  font-weight: 300 900;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/Inter-Variable.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-display: swap;
+  font-style: normal;
+}
+
+/**
+ * Icons scale with the text beside them: 1.25em square, vertically centred on the
+ * cap height rather than the baseline, and never shrunk by a flex parent.
+ */
+.sap-icon {
+  width: 1.25em;
+  height: 1.25em;
+  flex: none;
+  display: inline-block;
+  vertical-align: -0.28em;
+  overflow: visible;
+}
+
+/* Tailwind text-size utilities on an icon set its box, matching adjacent text. */
+.sap-icon.text-base { width: 1.15em; height: 1.15em; }
+.sap-icon.text-sm { width: 1.1em; height: 1.1em; }
+.sap-icon.text-lg { width: 1.35em; height: 1.35em; }
+.sap-icon.text-2xl,
+.sap-icon.text-3xl,
+.sap-icon.text-4xl { width: 1em; height: 1em; }
+
+@layer base {
+  :root {
+    --header-height: 3.5rem;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-ink-50 text-ink-800 font-sans antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight text-ink-900;
+  }
+
+  /* Keyboard users must always be able to see where they are — this app is driven
+     hard by keyboard during attendance and marks entry. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-1;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+}
+
+@layer components {
+  /* ---------------------------------------------------------------- buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium
+           transition-colors disabled:cursor-not-allowed disabled:opacity-50 select-none;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800;
+  }
+  .btn-secondary {
+    @apply btn bg-white text-ink-700 ring-1 ring-inset ring-ink-300 hover:bg-ink-50;
+  }
+  .btn-ghost {
+    @apply btn text-ink-600 hover:bg-ink-100 hover:text-ink-900;
+  }
+  .btn-danger {
+    @apply btn bg-rose-600 text-white hover:bg-rose-700;
+  }
+  .btn-sm {
+    @apply px-2 py-1 text-xs rounded-md;
+  }
+  .btn-lg {
+    @apply px-4 py-2.5 text-base;
+  }
+
+  /* ------------------------------------------------------------------ cards */
+  .card {
+    @apply rounded-xl bg-white shadow-card ring-1 ring-ink-200/70;
+  }
+  .card-head {
+    @apply flex flex-wrap items-center justify-between gap-3 border-b border-ink-200/70 px-4 py-3;
+  }
+  .card-title {
+    @apply text-sm font-semibold text-ink-900;
+  }
+  .card-body {
+    @apply p-4;
+  }
+
+  /* ------------------------------------------------------------------ forms */
+  .label {
+    @apply mb-1 block text-xs font-medium text-ink-600;
+  }
+  .input {
+    @apply block w-full rounded-lg border-0 bg-white px-3 py-2 text-sm text-ink-900
+           ring-1 ring-inset ring-ink-300 placeholder:text-ink-400
+           focus:ring-2 focus:ring-inset focus:ring-brand-500
+           disabled:bg-ink-100 disabled:text-ink-500;
+  }
+  .input-error {
+    @apply ring-rose-500 focus:ring-rose-500;
+  }
+  .field-error {
+    @apply mt-1 text-xs text-rose-600;
+  }
+  .hint {
+    @apply mt-1 text-xs text-ink-500;
+  }
+
+  /* ----------------------------------------------------------------- tables */
+  .table {
+    @apply w-full border-collapse text-sm;
+  }
+  .table thead th {
+    @apply sticky top-0 z-10 whitespace-nowrap border-b border-ink-200 bg-ink-50/95
+           px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-500
+           backdrop-blur;
+  }
+  .table tbody td {
+    @apply border-b border-ink-100 px-3 py-2 align-middle;
+  }
+  .table tbody tr:hover {
+    @apply bg-brand-50/40;
+  }
+  .table tbody tr[data-clickable] {
+    @apply cursor-pointer;
+  }
+  .table-numeric {
+    @apply text-right tabular-nums;
+  }
+
+  /* ------------------------------------------------------------------ chips */
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+  .chip-neutral {
+    @apply chip bg-ink-100 text-ink-700;
+  }
+  .chip-good {
+    @apply chip bg-emerald-100 text-emerald-800;
+  }
+  .chip-warn {
+    @apply chip bg-amber-100 text-amber-800;
+  }
+  .chip-bad {
+    @apply chip bg-rose-100 text-rose-800;
+  }
+  .chip-info {
+    @apply chip bg-sky-100 text-sky-800;
+  }
+
+  /* --------------------------------------------------------------- banners */
+  .banner {
+    @apply flex flex-wrap items-center gap-2 px-4 py-2 text-sm;
+  }
+  .banner-info {
+    @apply banner bg-sky-50 text-sky-900 border-b border-sky-200;
+  }
+  .banner-warn {
+    @apply banner bg-amber-50 text-amber-900 border-b border-amber-200;
+  }
+  .banner-bad {
+    @apply banner bg-rose-50 text-rose-900 border-b border-rose-200;
+  }
+
+  /* ------------------------------------------------------------------- nav */
+  .nav-link {
+    @apply flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-600
+           hover:bg-ink-100 hover:text-ink-900;
+  }
+  .nav-link[aria-current='page'] {
+    @apply bg-brand-50 text-brand-700;
+  }
+  .nav-section {
+    @apply px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-ink-400;
+  }
+
+  /* ----------------------------------------------------------------- stats */
+  .stat {
+    @apply card p-4;
+  }
+  .stat-label {
+    @apply text-xs font-medium uppercase tracking-wide text-ink-500;
+  }
+  .stat-value {
+    @apply mt-1 font-display text-2xl font-semibold tabular-nums text-ink-900;
+  }
+  .stat-sub {
+    @apply mt-0.5 text-xs text-ink-500;
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded bg-ink-200/70;
+  }
+
+  .empty {
+    @apply flex flex-col items-center justify-center gap-2 px-6 py-12 text-center text-sm text-ink-500;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Print. Report cards, receipts, ID cards and registers are all printed from the
+ * browser rather than through a PDF library — that keeps the app dependency-free
+ * and gives the office the printer dialogue they already know.
+ * ------------------------------------------------------------------------ */
+@media print {
+  .no-print,
+  aside,
+  header.app-header,
+  .toast-stack {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .print-page {
+    page-break-after: always;
+    break-after: page;
+  }
+  .print-page:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  .table thead th {
+    position: static !important;
+    background: #f1f5f9 !important;
+  }
+
+  a[href]::after {
+    content: '' !important;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+}
+
+/* The DUPLICATE stamp on a reprinted receipt (SPEC §11). */
+.duplicate-stamp {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-24deg);
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: rgb(225 29 72 / 0.18);
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
