@@ -14,24 +14,19 @@ const hours = require('../services/hours');
 const license = require('../services/license');
 const { evaluateLogin } = require('../middleware/hoursCheck');
 const { rateLimit } = require('../middleware/rateLimit');
-const { TOKEN_COOKIE, DEVICE_COOKIE, authenticate, clearAuthCookie } = require('../middleware/authenticate');
+const {
+  TOKEN_COOKIE,
+  DEVICE_COOKIE,
+  authenticate,
+  clearAuthCookie,
+  cookieOptions,
+} = require('../middleware/authenticate');
 const errors = require('../errors');
 
 const router = express.Router();
 
-const SESSION_COOKIE_OPTIONS = {
-  httpOnly: true,
-  sameSite: 'lax',
-  path: '/',
-};
-
 /** Device cookies are deliberately long-lived: enrolling once should last. */
-const DEVICE_COOKIE_OPTIONS = {
-  httpOnly: true,
-  sameSite: 'lax',
-  path: '/',
-  maxAge: 5 * 365 * 24 * 3600 * 1000,
-};
+const DEVICE_COOKIE_MAX_AGE = 5 * 365 * 24 * 3600 * 1000;
 
 /**
  * POST /api/login
@@ -131,6 +126,14 @@ router.post(
     } else {
       device = deviceVerdict.device;
       if (device) deviceId = device.deviceId;
+      // With enrollment switched off nothing is gating sign-in, but the audit log
+      // is still worth something: a marker per browser lets the office see that
+      // two different machines used one account today, which is the visible
+      // symptom of a shared password. It creates no device record and grants
+      // nothing — `evaluate` above has already decided this request is allowed.
+      if (!deviceId && deviceVerdict.reason === 'enforcementOff') {
+        deviceId = devices.newDeviceId();
+      }
     }
 
     // --- school hours -------------------------------------------------------
@@ -156,11 +159,10 @@ router.post(
       userAgent: req.get('user-agent'),
     });
 
-    res.cookie(TOKEN_COOKIE, token, {
-      ...SESSION_COOKIE_OPTIONS,
-      maxAge: idleMinutes * 60000 * 4,
-    });
-    if (deviceId) res.cookie(DEVICE_COOKIE, deviceId, DEVICE_COOKIE_OPTIONS);
+    // Cookie flags follow the request: secure over the tunnel's HTTPS, plain on the
+    // LAN's HTTP. A fixed `secure: true` would stop LAN sign-in working entirely.
+    res.cookie(TOKEN_COOKIE, token, cookieOptions(req, { maxAge: idleMinutes * 60000 * 4 }));
+    if (deviceId) res.cookie(DEVICE_COOKIE, deviceId, cookieOptions(req, { maxAge: DEVICE_COOKIE_MAX_AGE }));
 
     await audit.log({
       action: audit.ACTIONS.LOGIN_SUCCESS,
@@ -169,7 +171,9 @@ router.post(
       deviceId,
       entityType: 'user',
       entityId: user.id,
-      message: `Signed in from ${req.clientIp}${req.isLocalhost ? ' (server PC)' : ''}`,
+      message: `Signed in from ${req.clientIp}${
+        req.viaTunnel ? ' (remote, via the tunnel)' : req.isLocalhost ? ' (server PC)' : ' (school network)'
+      }`,
     });
 
     return ok(res, await sessionPayload(user, session, hoursVerdict));

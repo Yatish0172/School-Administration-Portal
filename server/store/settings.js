@@ -39,7 +39,16 @@ const DEFINITIONS = {
   'security.pinLength': { type: 'num', value: 6, category: 'Security', label: 'PIN length' },
 
   // Devices
-  'devices.enforce': { type: 'bool', value: true, category: 'Devices', label: 'Require enrolled devices' },
+  //
+  // Off by default: remote access hands out a fresh link every day, and a rotated
+  // hostname drops the deviceId cookie with it — so enforcing enrollment would
+  // de-register every remote user daily and hit the per-user device cap within
+  // three days. Staff sign in with their username and password instead.
+  //
+  // The enrollment machinery is all still here. Turn this back on and it works as
+  // before; pair that with `remote.rotateDaily` off, or a named tunnel on a fixed
+  // hostname, so the cookie survives.
+  'devices.enforce': { type: 'bool', value: false, category: 'Devices', label: 'Require enrolled devices' },
   'devices.capPerUser': { type: 'num', value: 2, category: 'Devices', label: 'Devices per user' },
   'devices.codeValidMinutes': { type: 'num', value: 10, category: 'Devices', label: 'Enrollment code validity (minutes)' },
 
@@ -68,6 +77,23 @@ const DEFINITIONS = {
   'backup.retainDaily': { type: 'num', value: 30, category: 'Backup', label: 'Daily copies retained' },
   'backup.retainMonthly': { type: 'num', value: 12, category: 'Backup', label: 'Monthly copies retained' },
   'backup.secondaryPath': { type: 'text', value: '', category: 'Backup', label: 'Second drive / USB path' },
+
+  // Remote access over a Cloudflare tunnel. This is the primary way staff reach the
+  // portal, so it opens on startup. It needs `cloudflared` on the PC; if that is
+  // missing the portal still comes up on the LAN and says how to install it.
+  'remote.enabled': { type: 'bool', value: true, category: 'Remote access', label: 'Allow access from outside the school' },
+  'remote.rotateDaily': { type: 'bool', value: true, category: 'Remote access', label: 'Issue a new link every day' },
+  'remote.rotateHour': { type: 'num', value: 3, category: 'Remote access', label: 'Hour to issue the new link (0-23)' },
+  'remote.cloudflaredPath': { type: 'text', value: '', category: 'Remote access', label: 'Path to cloudflared (leave blank to find it automatically)' },
+  'remote.currentUrl': { type: 'text', value: '', category: 'Remote access', label: 'Current remote link', hidden: true },
+  'remote.startedAt': { type: 'text', value: '', category: 'Remote access', label: 'Remote access opened at', hidden: true },
+  'remote.rotatedAt': { type: 'text', value: '', category: 'Remote access', label: 'Link last rotated', hidden: true },
+
+  // The school Wi-Fi is the optional second route in, kept on because it is the
+  // only one that works when the internet is down. Switching it off binds the
+  // server to this PC alone, so the Cloudflare link becomes the only way in —
+  // including for staff sitting in the building.
+  'network.lanEnabled': { type: 'bool', value: true, category: 'Network', label: 'Also allow direct access over the school Wi-Fi' },
 
   // Runtime state, not user-facing
   'system.lastLanIp': { type: 'text', value: '', category: 'System', label: 'Last known LAN IP', hidden: true },

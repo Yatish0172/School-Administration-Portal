@@ -8,7 +8,7 @@
 
 import { api } from '../api.js';
 import { el, page, card, button, table, fmt, spinner, chip, tabs, formModal, toast, filterSelect, printNode, empty, modal } from '../ui.js';
-import { lookups, mySectionOptions, teacherOptions, subjectOptions, sectionById, sectionLabel, guardedSave, readOnlyNotice, printHeader, printFooter } from './_common.js';
+import { lookups, mySectionOptions, teacherOptions, subjectOptions, sectionById, sectionLabel, guardedSave, readOnlyNotice, printHeader, printFooter, isSectionBound } from './_common.js';
 import { can, state } from '../state.js';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -306,10 +306,14 @@ function substitutionForm(view, data, reload) {
 async function byTeacher(host, view, repaint) {
   host.replaceChildren(
     el('div', { class: 'mb-3 flex flex-wrap items-end gap-2 no-print' }, [
+      // A class teacher may only see their own load, so offer only themselves
+      // rather than a list that would come back refused.
       filterSelect({
         label: 'Teacher',
         width: '14rem',
-        options: teacherOptions(),
+        options: isSectionBound()
+          ? teacherOptions().filter((option) => option.value === state.user?.id)
+          : teacherOptions(),
         value: view.teacherUserId,
         placeholder: 'Choose a teacher',
         onChange: (value) => {

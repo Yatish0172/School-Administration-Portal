@@ -209,7 +209,13 @@ export const fmt = {
     if (value === null || value === undefined || value === '') return fallback;
     return String(value);
   },
-  /** Turns 'attendance.mark.assigned' into 'Attendance mark assigned', 'upi' into 'UPI'. */
+  /**
+   * 'attendance.mark.assigned' -> 'Attendance mark assigned', 'upi' -> 'UPI',
+   * 'user.passwordChanged' -> 'User password changed'.
+   *
+   * camelCase has to be split too: audit action keys are written that way, and
+   * without it the log read "User passwordChanged".
+   */
   humanise(value) {
     if (!value) return '—';
     const raw = String(value).trim();
@@ -218,9 +224,10 @@ export const fmt = {
 
     const words = raw
       .replace(/[._-]/g, ' ')
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
       .split(/\s+/)
       .filter(Boolean)
-      .map((word) => ACRONYMS.get(word.toLowerCase()) || word);
+      .map((word) => ACRONYMS.get(word.toLowerCase()) || (/^[A-Z][a-z]/.test(word) ? word.toLowerCase() : word));
 
     if (!words.length) return '—';
     const first = words[0];
@@ -423,6 +430,13 @@ export function table({ columns, rows, onRowClick, emptyMessage = 'Nothing to sh
     return el('div', {}, [empty(emptyMessage)]);
   }
 
+  // One column absorbs the leftover width so the table fills its card instead of
+  // bunching to the left with a gap on the right. It is whichever column asks for
+  // it, else the first without a fixed width, else nothing.
+  const flexColumn =
+    columns.find((column) => column.flex) ||
+    columns.find((column) => !column.width && !['money', 'num', 'percent', 'status'].includes(column.type));
+
   const head = el(
     'thead',
     {},
@@ -437,7 +451,11 @@ export function table({ columns, rows, onRowClick, emptyMessage = 'Nothing to sh
               : '',
             stickyFirst && column === columns[0] ? 'sticky left-0 z-20 bg-ink-50' : '',
           ].join(' '),
-          style: column.width ? { width: column.width } : {},
+          style: column.width
+            ? { width: column.width }
+            : column === flexColumn
+              ? { width: '100%' }
+              : {},
           text: column.label,
         })
       )
@@ -486,7 +504,11 @@ function renderCell(cell, column, row, index) {
     const result = column.render(row, index);
     if (result instanceof Node) cell.appendChild(result);
     else if (Array.isArray(result)) append(cell, result);
-    else cell.textContent = result === null || result === undefined ? '—' : String(result);
+    // A render function returning null means "deliberately nothing here" — an
+    // action button that does not apply to this row. The em dash is for missing
+    // data, and printing it in an actions column just looks like a fault.
+    else if (result === null || result === undefined) cell.textContent = '';
+    else cell.textContent = String(result);
     return;
   }
   const value = row[column.key];

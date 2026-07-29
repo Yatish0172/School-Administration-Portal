@@ -309,9 +309,13 @@ router.post(
 
     const result = await devices.issueCode(userId, { userId: req.user.id });
     const net = require('../services/net');
+    const tunnel = require('../services/tunnel');
     const port = Number(process.env.PORT || 4700);
     const access = net.accessInfo(port);
     const base = access.url || access.localUrl;
+    const remoteBase = tunnel.currentUrl();
+
+    const query = `code=${encodeURIComponent(result.code)}&user=${encodeURIComponent(result.user.username)}`;
 
     await audit.fromRequest(req, {
       action: audit.ACTIONS.ENROLLMENT_CODE_ISSUED,
@@ -322,8 +326,12 @@ router.post(
 
     return ok(res, {
       ...result,
-      url: `${base}/#/login?code=${encodeURIComponent(result.code)}&user=${encodeURIComponent(result.user.username)}`,
+      url: `${base}/#/login?${query}`,
       baseUrl: base,
+      // When remote access is open, a staff member off-site needs the tunnel link,
+      // not the LAN address they cannot reach.
+      remoteUrl: remoteBase ? `${remoteBase}/#/login?${query}` : null,
+      remoteBaseUrl: remoteBase,
     });
   })
 );

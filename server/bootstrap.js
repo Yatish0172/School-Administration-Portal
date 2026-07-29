@@ -62,6 +62,10 @@ async function start({ port }) {
   clock.startHeartbeat();
   backup.startScheduler();
 
+  // 9. Whether the school Wi-Fi is a route in at all. Read here so the caller can
+  //    bind the socket accordingly before it starts listening.
+  const lanEnabled = (await settings.get('network.lanEnabled', true)) !== false;
+
   const backupState = await backup.status();
 
   await audit.log({
@@ -86,14 +90,39 @@ async function start({ port }) {
     licenseState,
     clockState,
     backupState,
+    lanEnabled,
+    // Filled in by startRemote() once the port is actually listening.
+    tunnelState: null,
     pendingJournalSnapshots: pending,
     dataDir: paths.database,
   };
 }
 
+/**
+ * Opens the Cloudflare tunnel. Deliberately separate from `start` and called only
+ * once Express is listening: `cloudflared` proxies straight to the port, and
+ * starting it first means the first visitors get a gateway error while the two race.
+ *
+ * Never fatal. A missing `cloudflared`, or no internet, must still leave a portal
+ * running on the LAN rather than no portal at all.
+ */
+async function startRemote() {
+  try {
+    return await require('./services/tunnel').resumeIfEnabled();
+  } catch (err) {
+    console.error(`[tunnel] could not open remote access: ${err.message}`);
+    return null;
+  }
+}
+
 /** Graceful shutdown: flush everything, back up, release mDNS. */
 async function stop({ backupOnExit = true } = {}) {
   try {
+    // Close the tunnel first: leaving cloudflared running past shutdown would keep
+    // publishing a hostname that points at nothing.
+    await require('./services/tunnel')
+      .stop({ quiet: true })
+      .catch(() => {});
     await audit.flushNow();
     await sessions.persist();
     await workbook.flushAll();
@@ -109,4 +138,4 @@ async function stop({ backupOnExit = true } = {}) {
   }
 }
 
-module.exports = { start, stop, SYSTEM_CTX };
+module.exports = { start, startRemote, stop, SYSTEM_CTX };

@@ -55,6 +55,9 @@ const ACTIONS = {
   CONCESSION_REQUESTED: 'fees.concessionRequested',
   CONCESSION_APPROVED: 'fees.concessionApproved',
   RECEIPT_PRINTED: 'fees.receiptPrinted',
+  REMOTE_TUNNEL_OPENED: 'remote.opened',
+  REMOTE_TUNNEL_CLOSED: 'remote.closed',
+  REMOTE_SIGN_IN: 'remote.signIn',
   BACKUP_RUN: 'backup.run',
   BACKUP_FAILED: 'backup.failed',
   RESTORE_RUN: 'backup.restore',
@@ -87,6 +90,8 @@ const CRITICAL = new Set([
   ACTIONS.USER_DISABLED,
   ACTIONS.HOURS_OVERRIDE,
   ACTIONS.IMPORT_COMMITTED,
+  ACTIONS.REMOTE_TUNNEL_OPENED,
+  ACTIONS.REMOTE_TUNNEL_CLOSED,
 ]);
 
 const FLUSH_DELAY_MS = 1500;

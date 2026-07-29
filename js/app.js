@@ -101,15 +101,20 @@ function buildShell() {
 
   const clockNode = el('span', { class: 'font-medium tabular-nums', text: '—' });
   const bannerNode = el('div', {});
-  const contentNode = el('main', { class: 'flex-1 overflow-y-auto' });
-  const navNode = el('nav', { class: 'flex-1 space-y-0.5 overflow-y-auto px-2 pb-4' });
+  const contentNode = el('main', { class: 'min-h-0 flex-1 overflow-y-auto' });
+  // `min-h-0` is what actually lets a flex child scroll; without it the nav grows
+  // to fit its content and overflow-y-auto never engages.
+  const navNode = el('nav', { class: 'min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2 pb-4' });
 
+  // `h-screen` bounds the sidebar to the viewport so its nav can scroll. As a
+  // plain static flex child it stretched to content height instead, which pushed
+  // the last menu items off the bottom of the screen with no way to reach them.
   const sidebar = el(
     'aside',
     {
       id: 'sidebar',
       class:
-        'fixed inset-y-0 left-0 z-30 flex w-64 -translate-x-full flex-col border-r border-ink-200 bg-white transition-transform lg:static lg:translate-x-0 no-print',
+        'fixed inset-y-0 left-0 z-30 flex h-screen w-64 -translate-x-full flex-col border-r border-ink-200 bg-white transition-transform lg:sticky lg:top-0 lg:translate-x-0 no-print',
     },
     [
       el('div', { class: 'flex h-14 items-center gap-2 border-b border-ink-200 px-4' }, [
@@ -160,11 +165,18 @@ function buildShell() {
     ]
   );
 
+  // The shell owns the scrolling: sidebar and content scroll independently rather
+  // than the whole document scrolling as one. `print:h-auto` releases that for
+  // printing, where the content must flow onto as many pages as it needs.
   appNode.appendChild(
-    el('div', { class: 'flex min-h-screen' }, [
+    el('div', { class: 'flex h-screen overflow-hidden print:h-auto print:overflow-visible' }, [
       sidebar,
       backdrop,
-      el('div', { class: 'flex min-w-0 flex-1 flex-col' }, [header, bannerNode, contentNode]),
+      el('div', { class: 'flex min-w-0 min-h-0 flex-1 flex-col print:min-h-0' }, [
+        header,
+        bannerNode,
+        contentNode,
+      ]),
     ])
   );
 

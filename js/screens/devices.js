@@ -44,12 +44,24 @@ function build(data, view, reload) {
 
   return el('div', { class: 'space-y-4' }, [
     data.settings['devices.enforce'] === false
-      ? el('div', { class: 'banner-bad rounded-lg' }, [
-          icon('error'),
-          el('span', {
-            text:
-              'Device enrollment is switched off in Settings. Anyone on the school Wi-Fi with a password can sign in from any device. Turn it back on unless you are mid-setup.',
-          }),
+      ? el('div', { class: 'banner-warn rounded-lg' }, [
+          icon('info'),
+          el('div', {}, [
+            el('p', {
+              class: 'font-medium',
+              text: 'Device enrollment is switched off, so a password is all that is needed to sign in.',
+            }),
+            el('p', {
+              class: 'mt-0.5 text-sm',
+              text:
+                'That applies to anyone on the school Wi-Fi, and to anyone holding the remote link while it is open. Nothing below has any effect until enrollment is switched back on in Settings.',
+            }),
+            el('p', {
+              class: 'mt-0.5 text-sm',
+              text:
+                'It is off because the remote link changes every day, and a new link cannot recognise a device enrolled against the old one.',
+            }),
+          ]),
         ])
       : null,
 
@@ -180,6 +192,27 @@ async function issueCode(userId, reload) {
               el('li', { text: 'They enter the code with their own username and password.' }),
               el('li', { text: 'The device is registered and they will not need a code again.' }),
             ]),
+            // Someone enrolling from home cannot reach the LAN address at all, so
+            // the tunnel link is offered whenever remote access is open.
+            result.remoteUrl
+              ? el('div', { class: 'rounded-lg bg-ink-50 p-2' }, [
+                  el('p', { class: 'text-xs font-semibold uppercase tracking-wide text-ink-500', text: 'Enrolling from outside the school' }),
+                  el('p', { class: 'mt-0.5 break-all font-mono text-xs text-ink-700', text: result.remoteUrl }),
+                  el('div', { class: 'mt-1 flex gap-2' }, [
+                    button('Copy remote link', {
+                      size: 'sm',
+                      onClick: async () => {
+                        try {
+                          await navigator.clipboard.writeText(result.remoteUrl);
+                          toast('Remote link copied.', 'good', 2000);
+                        } catch (err) {
+                          toast('Select the text and copy it manually.', 'warn');
+                        }
+                      },
+                    }),
+                  ]),
+                ])
+              : null,
           ]),
         ]),
       ]),

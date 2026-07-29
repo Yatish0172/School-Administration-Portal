@@ -253,10 +253,23 @@
     background: #fff !important;
   }
 
+  /* The shell scrolls its panes on screen; printing needs the content to flow
+     freely onto as many pages as it takes, so every height and overflow lock is
+     released here. */
+  html,
+  body,
+  #app,
+  #app > div,
+  #app > div > div,
+  main {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
   main {
     padding: 0 !important;
     margin: 0 !important;
-    overflow: visible !important;
   }
 
   .print-page {

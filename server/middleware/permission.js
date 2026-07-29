@@ -91,6 +91,37 @@ function scope(options = {}) {
   };
 }
 
+/**
+ * Scope for data the whole school may read but a class teacher may read only for
+ * their own sections — the timetable, for one (SPEC §4: "Class Teacher — own
+ * sections ... cannot see other sections").
+ *
+ * The difference from `scope` is what happens to a role with no sections assigned.
+ * `scope` leaves it with an empty list, which is right for marking attendance and
+ * wrong here: the front office and exam cell have no sections and must still see
+ * the whole school's timetable. So the restriction is applied to section-bound
+ * roles and nobody else.
+ */
+function sectionBoundScope() {
+  return async (req, res, next) => {
+    try {
+      if (!req.user) return next(errors.unauthorized());
+      const year = await academics.resolveYear(req.query.academicYearId || req.body?.academicYearId);
+
+      if (!permissions.SECTION_SCOPED_ROLES.has(req.user.roleKey)) {
+        req.scope = { allSections: true, sectionIds: null, academicYearId: year.id, year };
+        return next();
+      }
+
+      const sectionIds = await academics.sectionsForTeacher(req.user.id, year.id);
+      req.scope = { allSections: false, sectionIds, academicYearId: year.id, year };
+      return next();
+    } catch (err) {
+      return next(err);
+    }
+  };
+}
+
 /** Throws unless the request's scope covers the section. */
 function assertSection(req, sectionId) {
   if (!sectionId) {
@@ -150,6 +181,7 @@ module.exports = {
   need,
   needAny,
   scope,
+  sectionBoundScope,
   assertSection,
   filterBySection,
   studentView,

@@ -81,10 +81,19 @@ export function sectionOptions(classId = null) {
  * their own — the server enforces the same rule, this just avoids offering a
  * choice that will be refused.
  */
+/**
+ * True when this user may only work with their own sections — a class teacher.
+ * The server decides this independently; this only keeps the pickers honest so
+ * nobody is offered a choice that would come back refused.
+ */
+export function isSectionBound() {
+  return !!state.user?.scopeSectionIds && !can('attendance.mark.any');
+}
+
 export function mySectionOptions() {
   const scoped = state.user?.scopeSectionIds;
   const all = state.lookups?.sections || [];
-  const usable = scoped && !can('attendance.mark.any') ? all.filter((row) => scoped.includes(row.id)) : all;
+  const usable = isSectionBound() ? all.filter((row) => scoped.includes(row.id)) : all;
   return usable.map((row) => ({ value: row.id, label: sectionLabel(row.id) }));
 }
 

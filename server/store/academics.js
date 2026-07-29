@@ -743,8 +743,12 @@ async function setTimetableSlot(entry, ctx) {
         status: 'active',
       };
 
-      if (!entry.subjectId && !entry.teacherUserId && existing) {
-        // Clearing a slot.
+      if (!entry.subjectId && !entry.teacherUserId) {
+        // Clearing a slot. An already-free period has nothing to clear — falling
+        // through to the insert below would write a row with no subject and no
+        // teacher, which the grid then draws as a filled slot reading
+        // "Subject / No teacher" that nobody can get rid of.
+        if (!existing) return { cleared: false, slot: null };
         return crud.updateIn(api, WB, 'Timetable', existing.id, { status: 'inactive' }, ctx, {
           label: 'timetable slot',
         });

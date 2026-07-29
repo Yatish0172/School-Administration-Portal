@@ -10,13 +10,18 @@ const { apiRouter } = require('./server/routes');
 const net = require('./server/services/net');
 
 const PORT = Number(process.env.PORT || 4700);
-const HOST = process.env.HOST || '0.0.0.0';
 
 /**
- * Express bound to 0.0.0.0:4700 so staff devices on the LAN can reach it.
+ * Two ways in, in order of how staff are expected to use them:
  *
- * There is no CDN, no external font, no analytics and no runtime network call of
- * any kind — the school PC has no internet (CLAUDE.md tech stack).
+ *  1. The Cloudflare link, opened on startup. This is the primary route and works
+ *     from anywhere.
+ *  2. The school Wi-Fi, on by default because it is the only route that survives an
+ *     internet outage. Turning `network.lanEnabled` off binds to this PC alone.
+ *
+ * The app itself still makes no outbound calls of its own — no CDN, no fonts, no
+ * analytics. `cloudflared` is a separate process the school installs, and it is the
+ * only thing that talks to the internet.
  */
 function createApp() {
   const app = express();
@@ -89,8 +94,13 @@ async function start() {
   const app = createApp();
   const info = await bootstrap.start({ port: PORT });
 
+  // With the Wi-Fi route switched off, bind to loopback only. `cloudflared` runs on
+  // this PC and reaches it there, so the Cloudflare link keeps working while nothing
+  // on the school network can connect directly.
+  const host = process.env.HOST || (info.lanEnabled ? '0.0.0.0' : '127.0.0.1');
+
   const server = await new Promise((resolve, reject) => {
-    const listener = app.listen(PORT, HOST, () => resolve(listener));
+    const listener = app.listen(PORT, host, () => resolve(listener));
     listener.on('error', (err) => {
       if (err.code === 'EADDRINUSE') {
         reject(
@@ -105,10 +115,14 @@ async function start() {
     });
   });
 
-  net.startMdns(PORT);
+  if (info.lanEnabled) net.startMdns(PORT);
+
+  // Only now that the port answers is it worth pointing a tunnel at it.
+  info.tunnelState = await bootstrap.startRemote();
+
   printBanner(info);
 
-  return { server, app, info, port: PORT };
+  return { server, app, info, port: PORT, host };
 }
 
 function printBanner(info) {
@@ -116,11 +130,30 @@ function printBanner(info) {
   console.log(`\n${line}`);
   console.log('  School Admin Portal is running');
   console.log(line);
-  if (info.access.url) {
-    console.log(`  Staff address     ${info.access.url}`);
-    console.log(`  Or by name        ${info.access.mdnsUrl}`);
+  // The Cloudflare link goes first: it is what staff are given.
+  const remote = info.tunnelState;
+  if (remote && remote.url) {
+    console.log(`  STAFF LINK        ${remote.url}`);
+    if (remote.confirmed) {
+      console.log('                    Send this to staff. It changes on every restart.');
+    } else {
+      console.log('                    Issued, but Cloudflare is not serving it yet.');
+      console.log('                    Check Settings → Access before sending it out.');
+    }
   } else {
-    console.log('  No LAN address found — check the network cable or Wi-Fi.');
+    console.log('  STAFF LINK        not available yet');
+  }
+
+  console.log('');
+  if (info.lanEnabled) {
+    if (info.access.url) {
+      console.log(`  On school Wi-Fi   ${info.access.url}`);
+      console.log(`  Or by name        ${info.access.mdnsUrl}`);
+    } else {
+      console.log('  On school Wi-Fi   no address found — check the network cable or Wi-Fi.');
+    }
+  } else {
+    console.log('  On school Wi-Fi   switched off — the staff link is the only way in.');
   }
   console.log(`  On this PC        ${info.access.localUrl}`);
   console.log(`  Data folder       ${info.dataDir}`);
@@ -131,9 +164,35 @@ function printBanner(info) {
     info.licenseState.daysLeft !== null ? `, ${info.licenseState.daysLeft} day(s) left` : ''
   }`);
 
-  if (info.addressChanged) {
-    console.log(`\n  ⚠  Address changed from ${info.previousIp} to ${info.access.ip}`);
-    console.log('     Reprint the QR code for staff.');
+  // The staff link is the primary route, so say clearly why it is missing and what
+  // to do about it. The portal is still usable on the Wi-Fi in the meantime.
+  if (remote && remote.url && !remote.confirmed) {
+    console.log(`\n  ⚠  The staff link has not answered from outside yet.`);
+    console.log('     Usually it starts working within a minute or two on its own.');
+  }
+
+  if (!remote || !remote.url) {
+    console.log(`\n${line}`);
+    if (remote && remote.installed === false) {
+      console.log('  ⚠  Remote access needs cloudflared, which is not installed');
+      for (const hint of remote.installHint || []) console.log(`     ${hint}`);
+    } else if (remote && remote.error) {
+      console.log(`  ⚠  Remote access could not start: ${remote.error}`);
+      console.log('     Check this PC has internet, then reopen it from Settings → Access.');
+    } else {
+      console.log('  ⚠  Remote access is switched off');
+      console.log('     Turn it on in Settings → Access to get a staff link.');
+    }
+    console.log(
+      info.lanEnabled
+        ? '     Staff on the school Wi-Fi can use the address above in the meantime.'
+        : '     Nobody can reach the portal until this is fixed, because the Wi-Fi route is off.'
+    );
+  }
+
+  if (info.addressChanged && info.lanEnabled) {
+    console.log(`\n  ⚠  Wi-Fi address changed from ${info.previousIp} to ${info.access.ip}`);
+    console.log('     Reprint the QR code for staff who use the Wi-Fi route.');
   }
   if (info.clockState.movedBackwards) {
     console.log(`\n  ⚠  ${info.clockState.message}`);

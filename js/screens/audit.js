@@ -128,12 +128,12 @@ function listCard(data, view, reload) {
             width: '14rem',
             render: (row) => chip(fmt.humanise(row.action), toneFor(row.action)),
           },
-          { key: 'message', label: 'Detail' },
+          { key: 'message', label: 'Detail', flex: true },
           { key: 'ip', label: 'From', width: '9rem' },
           {
             key: 'changes',
             label: '',
-            width: '5rem',
+            width: '6.5rem',
             render: (row) =>
               row.before || row.after
                 ? button('Changes', { size: 'sm', onClick: () => showChanges(row) })

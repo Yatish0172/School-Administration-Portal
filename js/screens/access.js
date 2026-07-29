@@ -7,8 +7,9 @@
  */
 
 import { api } from '../api.js';
-import { el, page, card, button, fmt, spinner, chip, icon, toast, printNode, errorBox } from '../ui.js';
+import { el, page, card, button, fmt, spinner, chip, icon, toast, printNode, errorBox, confirm } from '../ui.js';
 import { qrSvg, isAvailable } from '../qr.js';
+import { can } from '../state.js';
 
 export async function render(container) {
   container.replaceChildren(spinner());
@@ -61,7 +62,21 @@ export async function render(container) {
             ])
           : null,
 
-        el('div', { class: 'grid grid-cols-1 gap-4 lg:grid-cols-3' }, [
+        // The Cloudflare link is how staff are expected to get in, so it leads.
+        can('settings.edit') ? remoteSection() : null,
+
+        el('div', { class: 'pt-2' }, [
+          el('h2', { class: 'font-display text-lg font-semibold text-ink-900', text: 'On the school Wi-Fi' }),
+          el('p', {
+            class: 'mt-0.5 text-sm text-ink-600',
+            text:
+              data.lanEnabled === false
+                ? 'Switched off. Nobody on the school network can connect directly — everyone uses the staff link above, including in the building.'
+                : 'The second way in, for staff inside the building. Slower to set up but the only route that keeps working when the internet is down.',
+          }),
+        ]),
+
+        data.lanEnabled === false ? null : el('div', { class: 'grid grid-cols-1 gap-4 lg:grid-cols-3' }, [
           card({
             class: 'lg:col-span-2',
             title: 'Scan or type this',
@@ -101,7 +116,7 @@ export async function render(container) {
           }),
         ]),
 
-        card({
+        data.lanEnabled === false ? null : card({
           title: 'Keeping the address the same',
           subtitle: 'The IP changes on reboot unless it is fixed. Do at least one of these.',
           body: el('div', { class: 'grid grid-cols-1 gap-4 md:grid-cols-2' }, [
@@ -122,7 +137,7 @@ export async function render(container) {
           ]),
         }),
 
-        card({
+        data.lanEnabled === false ? null : card({
           title: 'One-time firewall rule',
           subtitle:
             'Run this once, in a Command Prompt opened as Administrator on this PC. It opens the port on private networks only.',
@@ -133,7 +148,7 @@ export async function render(container) {
           }),
         }),
 
-        data.interfaces.length > 1
+        data.lanEnabled !== false && data.interfaces.length > 1
           ? card({
               title: 'All network addresses on this PC',
               subtitle:
@@ -155,6 +170,172 @@ export async function render(container) {
       ]),
     })
   );
+}
+
+/* ------------------------------------------------------------ remote access */
+
+/**
+ * Remote access over a Cloudflare tunnel. Loads its own state so a slow or absent
+ * cloudflared never holds up the rest of the Access screen.
+ */
+function remoteSection() {
+  const host = el('div', {}, [spinner('Checking remote access…')]);
+
+  async function load() {
+    try {
+      const state = await api.get('/api/remote');
+      host.replaceChildren(remoteCard(state, load));
+    } catch (err) {
+      host.replaceChildren(
+        card({ title: 'Access from outside the school', body: el('p', { class: 'text-sm text-rose-700', text: err.message }) })
+      );
+    }
+  }
+
+  load();
+  return host;
+}
+
+function remoteCard(state, reload) {
+  // A link that has been issued but not yet answered from outside is shown, clearly
+  // marked, rather than hidden — it usually starts working within a minute, and the
+  // office needs to know not to send it out until it does.
+  const running = (state.status === 'running' || state.status === 'verifying') && state.url;
+  const unconfirmed = running && state.confirmed === false;
+
+  if (!state.installed) {
+    return card({
+      title: 'Access from outside the school',
+      subtitle: 'Not set up yet.',
+      body: el('div', { class: 'space-y-3' }, [
+        el('p', {
+          class: 'text-sm text-ink-700',
+          text: 'Staff can reach the portal from home over a Cloudflare tunnel. It needs one free program installed on this PC first.',
+        }),
+        el(
+          'ol',
+          { class: 'list-decimal space-y-1 pl-5 text-sm text-ink-700' },
+          (state.installHint || []).map((line) => el('li', { text: line }))
+        ),
+        el('pre', {
+          class: 'overflow-x-auto rounded-lg bg-ink-900 p-3 text-xs text-ink-100',
+          text: 'winget install --id Cloudflare.cloudflared',
+        }),
+        el('div', { class: 'flex flex-wrap gap-2' }, [
+          button('Copy command', {
+            iconName: 'content_copy',
+            onClick: () => copy('winget install --id Cloudflare.cloudflared'),
+          }),
+          button('Check again', { iconName: 'refresh', onClick: reload }),
+        ]),
+        el('p', {
+          class: 'text-xs text-ink-500',
+          text: 'Restart the portal after installing, then this card will offer to switch remote access on.',
+        }),
+      ]),
+    });
+  }
+
+  return card({
+    title: 'Access from outside the school',
+    subtitle: unconfirmed
+      ? 'A link has been issued but Cloudflare is not serving it yet. Do not send it out until it turns green.'
+      : running
+        ? 'Open. Staff can sign in from anywhere using the link below.'
+        : 'Switched off. Nothing outside the school can reach the portal.',
+    actions: [
+      unconfirmed ? chip('Coming up', 'warn') : running ? chip('Open', 'good') : chip('Closed', 'neutral'),
+      running
+        ? button('New link now', {
+            iconName: 'sync',
+            onClick: async () => {
+              const proceed = await confirm({
+                title: 'Issue a new link?',
+                message: 'The current link stops working immediately and every staff member needs the new one.',
+                confirmLabel: 'Issue a new link',
+              });
+              if (!proceed) return;
+              await act('/api/remote/rotate', 'New link issued.', reload);
+            },
+          })
+        : null,
+      running
+        ? button('Switch off', {
+            variant: 'danger',
+            onClick: async () => {
+              const proceed = await confirm({
+                title: 'Switch off remote access?',
+                message: 'The link stops working at once. Staff on the school network are unaffected.',
+                confirmLabel: 'Switch off',
+                danger: true,
+              });
+              if (!proceed) return;
+              await act('/api/remote/stop', 'Remote access switched off.', reload);
+            },
+          })
+        : button('Switch on', {
+            variant: 'primary',
+            iconName: 'lock_open',
+            onClick: () => act('/api/remote/start', 'Remote access is open.', reload, 'Opening the tunnel…'),
+          }),
+    ],
+    body: el('div', { class: 'space-y-4' }, [
+      warning(state.warning),
+
+      running
+        ? el('div', { class: 'flex flex-col items-start gap-4 sm:flex-row' }, [
+            isAvailable() ? qrSvg(state.url, { size: 170, title: 'Remote access QR code' }) : null,
+            el('div', { class: 'min-w-0 flex-1 space-y-2' }, [
+              el('p', { class: 'text-xs uppercase tracking-wide text-ink-500', text: "Today's link" }),
+              el('div', { class: 'flex flex-wrap items-center gap-2' }, [
+                el('p', { class: 'break-all font-mono text-base font-semibold text-ink-900', text: state.url }),
+                button('Copy', { size: 'sm', onClick: () => copy(state.url) }),
+              ]),
+              el('div', { class: 'space-y-1 pt-1 text-sm' }, [
+                row('Opened', state.startedAt ? fmt.dateTime(state.startedAt) : '—'),
+                row(
+                  'New link due',
+                  state.nextRotationAt
+                    ? `${fmt.dateTime(state.nextRotationAt)} (daily)`
+                    : 'daily rotation is switched off'
+                ),
+                state.rotatedAt ? row('Last rotated', fmt.dateTime(state.rotatedAt)) : null,
+                row('cloudflared', state.version || 'installed'),
+              ]),
+            ]),
+          ])
+        : el('p', {
+            class: 'text-sm text-ink-600',
+            text: 'Switching this on asks Cloudflare for a temporary web address that points at this PC. No account and no card are needed, and the address changes every day.',
+          }),
+
+      el('div', { class: 'rounded-lg bg-ink-50 p-3' }, [
+        el('p', { class: 'mb-1 text-sm font-semibold text-ink-800', text: 'How a staff member signs in from home' }),
+        el(
+          'ol',
+          { class: 'list-decimal space-y-0.5 pl-5 text-sm text-ink-700' },
+          (state.staffGuidance || []).map((line) => el('li', { text: line }))
+        ),
+      ]),
+
+      state.error
+        ? el('p', { class: 'rounded-lg bg-rose-50 p-2 text-sm text-rose-800', text: state.error })
+        : null,
+    ]),
+  });
+}
+
+async function act(path, message, reload, busyText) {
+  const busy = busyText ? toast(busyText, 'info', 60000) : null;
+  try {
+    await api.post(path);
+    if (busy) busy.remove();
+    toast(message, 'good');
+  } catch (err) {
+    if (busy) busy.remove();
+    toast(err.message, 'bad', 12000);
+  }
+  await reload();
 }
 
 function bigAddress(label, value, onCopy) {

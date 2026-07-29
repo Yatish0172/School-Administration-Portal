@@ -3,7 +3,13 @@
 const express = require('express');
 
 const { ok, handler, body, str, num, bool, isoDate } = require('../http');
-const { need, needAny } = require('../middleware/permission');
+const {
+  need,
+  needAny,
+  sectionBoundScope,
+  assertSection,
+  filterBySection,
+} = require('../middleware/permission');
 const academics = require('../store/academics');
 const users = require('../store/users');
 const audit = require('../store/audit');
@@ -537,19 +543,31 @@ router.put(
 router.get(
   '/timetable',
   need('timetable.view'),
+  sectionBoundScope(),
   handler(async (req, res) => {
-    const year = await academics.resolveYear(str(req.query.academicYearId, { max: 40 }));
+    const year = req.scope.year;
     const sectionId = str(req.query.sectionId, { max: 40 });
     const teacherUserId = str(req.query.teacherUserId, { max: 40 });
     if (!sectionId && !teacherUserId) {
       throw errors.badRequest('Choose a section or a teacher.');
     }
 
-    const rows = await academics.listTimetable({
-      academicYearId: year.id,
-      sectionId,
-      teacherUserId,
-    });
+    // A class teacher sees their own sections and their own load, nothing wider.
+    if (sectionId) assertSection(req, sectionId);
+    if (teacherUserId && !req.scope.allSections && teacherUserId !== req.user.id) {
+      throw errors.forbidden(
+        'You can only see your own timetable. Ask the office for another teacher’s.'
+      );
+    }
+
+    const rows = filterBySection(
+      req,
+      await academics.listTimetable({
+        academicYearId: year.id,
+        sectionId,
+        teacherUserId,
+      })
+    );
     const subjects = await academics.listSubjects({ academicYearId: year.id });
     const subjectById = new Map(subjects.map((s) => [s.id, s]));
     const allUsers = await users.all();
@@ -569,10 +587,16 @@ router.get(
         sectionName: sectionById.get(row.sectionId)?.name || '',
         className: classById.get(row.classId)?.name || '',
       })),
-      substitutions: await academics.listSubstitutions({
-        date: isoDate(req.query.date),
-        sectionId,
-      }),
+      // Filtered by scope as well as by section: a by-teacher request carries no
+      // section id, so without this a class teacher would receive the whole
+      // school's substitutions for the day.
+      substitutions: filterBySection(
+        req,
+        await academics.listSubstitutions({
+          date: isoDate(req.query.date),
+          sectionId,
+        })
+      ),
     });
   })
 );

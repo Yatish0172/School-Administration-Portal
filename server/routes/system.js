@@ -73,6 +73,8 @@ openRouter.get(
       mdnsHostname: net.MDNS_HOSTNAME,
       addressChanged: !!(previousIp && access.ip && previousIp !== access.ip),
       previousIp: previousIp || null,
+      // When the Wi-Fi route is off, none of the LAN guidance on this screen applies.
+      lanEnabled: (await settings.get('network.lanEnabled', true)) !== false,
       serverTime: new Date().toISOString(),
       localTime: state.localTime,
       localDate: state.localDate,
@@ -576,6 +578,79 @@ router.post(
       sessionToken: req.sessionToken,
     });
     return ok(res, result);
+  })
+);
+
+/* ------------------------------------------------------- remote access */
+
+/**
+ * Remote access is administrator-only: it decides whether the school's data is
+ * reachable from outside the building at all.
+ */
+router.get(
+  '/remote',
+  need('settings.edit'),
+  handler(async (req, res) => {
+    const tunnel = require('../services/tunnel');
+    const state = await tunnel.status();
+    // What to tell the office depends on whether enrollment is gating sign-in.
+    const deviceEnforcement = await settings.get('devices.enforce', false);
+    return ok(res, {
+      ...state,
+      deviceEnforcement,
+      warning: deviceEnforcement
+        ? 'Anyone holding the link reaches the sign-in page, exactly as anyone on the school Wi-Fi does. ' +
+          'Device enrollment, passwords and school hours are what protect the data — not the secrecy of the address.'
+        : 'Device enrollment is off, so anyone with today’s link and a staff password can sign in from anywhere ' +
+          'on the internet. Treat the link as staff-only, never post it in a group parents can see, and change ' +
+          'any password you think has been shared. Accounts lock for 15 minutes after 5 wrong attempts.',
+      staffGuidance: deviceEnforcement
+        ? [
+            'Send the staff member the current link.',
+            'Their first sign-in from a new phone or laptop needs an enrollment code from Settings → Devices.',
+            'After that the device is remembered and they can sign in from anywhere the link works.',
+            'Their role still limits what they see, and school hours still apply.',
+          ]
+        : [
+            'Send staff the current link — it changes every day, so send the new one each morning.',
+            'They sign in with their own username and password. No enrollment code is needed.',
+            'Yesterday’s link stops working, and it signs them out, so they sign in again on the new one.',
+            'Their role still limits what they see, and school hours still apply.',
+          ],
+    });
+  })
+);
+
+router.post(
+  '/remote/start',
+  need('settings.edit'),
+  handler(async (req, res) => {
+    const tunnel = require('../services/tunnel');
+    const state = await tunnel.start({ userId: req.user.id, name: req.user.name, roleKey: req.user.roleKey });
+    return ok(res, state);
+  })
+);
+
+router.post(
+  '/remote/stop',
+  need('settings.edit'),
+  handler(async (req, res) => {
+    const tunnel = require('../services/tunnel');
+    const state = await tunnel.stop({
+      ctx: { userId: req.user.id, name: req.user.name, roleKey: req.user.roleKey },
+    });
+    return ok(res, state);
+  })
+);
+
+/** Issues a new link immediately; the old one stops working at once. */
+router.post(
+  '/remote/rotate',
+  need('settings.edit'),
+  handler(async (req, res) => {
+    const tunnel = require('../services/tunnel');
+    const state = await tunnel.rotate({ userId: req.user.id, name: req.user.name, roleKey: req.user.roleKey });
+    return ok(res, state);
   })
 );
 
