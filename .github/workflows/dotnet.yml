@@ -1,0 +1,67 @@
+name: .NET PostgreSQL validation
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: school_portal
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d school_portal"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__SchoolDb: Host=localhost;Port=5432;Database=school_portal;Username=postgres;Password=postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            dotnet-tools.json
+
+      - name: Restore tools and packages
+        run: |
+          dotnet tool restore
+          dotnet restore SchoolPortal.sln
+
+      - name: Build
+        run: dotnet build SchoolPortal.sln --configuration Release --no-restore
+
+      - name: Apply migrations
+        run: >
+          dotnet ef database update
+          --project src/SchoolPortal.Infrastructure
+          --startup-project src/SchoolPortal.Web
+          --configuration Release
+          --no-build
+
+      - name: Test with coverage
+        run: >
+          dotnet test SchoolPortal.sln
+          --configuration Release
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --logger "trx"
+
+      - name: Check vulnerable dependencies
+        run: dotnet list SchoolPortal.sln package --vulnerable --include-transitive

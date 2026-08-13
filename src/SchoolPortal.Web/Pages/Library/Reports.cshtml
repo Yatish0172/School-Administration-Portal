@@ -1,0 +1,77 @@
+@page
+@model SchoolPortal.Web.Pages.Library.ReportsModel
+@{
+    ViewData["Title"] = "Library reports";
+    var today = DateOnly.FromDateTime(DateTime.Today);
+}
+
+<section class="page-heading">
+    <div><p class="eyebrow">Library</p><h1>Circulation and stock reports</h1><p>Issued, overdue, returned, lost, student-history, and stock views.</p></div>
+    <div class="record-actions">
+        <a asp-page="/Library/Circulation" class="btn btn-primary">Circulation desk</a>
+        <a asp-page="/Library/Index" class="btn btn-outline-primary">Catalogue</a>
+    </div>
+</section>
+
+<section class="module-grid" aria-label="Library report totals">
+    <article class="module-card"><div class="module-card-heading"><h2>Total copies</h2></div><p class="display-6">@Model.TotalCopies</p></article>
+    <article class="module-card"><div class="module-card-heading"><h2>Available</h2></div><p class="display-6">@Model.AvailableCopies</p></article>
+    <article class="module-card"><div class="module-card-heading"><h2>Issued</h2></div><p class="display-6">@Model.IssuedCopies</p></article>
+    <article class="module-card"><div class="module-card-heading"><h2>Overdue</h2></div><p class="display-6">@Model.OverdueCount</p></article>
+    <article class="module-card"><div class="module-card-heading"><h2>Lost</h2></div><p class="display-6">@Model.LostCopies</p></article>
+</section>
+
+<section class="data-panel mb-3">
+    <form method="get" class="filter-bar">
+        <div>
+            <label asp-for="Status" class="form-label">Transaction status</label>
+            <select asp-for="Status" class="form-select"><option value="">All statuses</option>@foreach (var status in Enum.GetValues<SchoolPortal.Domain.Library.BookIssueStatus>()) { <option value="@status">@status</option> }</select>
+        </div>
+        <div class="filter-search">
+            <label asp-for="StudentId" class="form-label">Student history</label>
+            <select asp-for="StudentId" class="form-select"><option value="">All students</option>@foreach (var student in Model.Students) { <option value="@student.Id">@student.AdmissionNumber · @student.FullName</option> }</select>
+        </div>
+        <button type="submit" class="btn btn-primary">Run report</button>
+    </form>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Copy</th><th>Student</th><th>Issued</th><th>Due / returned</th><th>Status</th><th>Fine</th></tr></thead>
+            <tbody>
+            @if (Model.Issues.Count == 0)
+            {
+                <tr><td colspan="6" class="empty-cell">No circulation records match these filters.</td></tr>
+            }
+            else
+            {
+                @foreach (var issue in Model.Issues)
+                {
+                    var overdue = issue.Status == SchoolPortal.Domain.Library.BookIssueStatus.Issued && issue.DueDate < today;
+                    <tr>
+                        <td>@issue.LibraryCopy.AccessionNumber<div class="table-subtext">@issue.LibraryCopy.LibraryTitle.Title</div></td>
+                        <td>@issue.Student.FullName<div class="table-subtext">@issue.Student.AdmissionNumber</div></td>
+                        <td>@issue.IssuedDate.ToString("dd MMM yyyy")</td>
+                        <td>@issue.DueDate.ToString("dd MMM yyyy")<div class="table-subtext">@issue.ReturnedDate?.ToString("dd MMM yyyy")</div></td>
+                        <td><span class="status-pill @(overdue || issue.Status == SchoolPortal.Domain.Library.BookIssueStatus.Lost ? "status-left" : "status-active")">@(overdue ? "Overdue" : issue.Status)</span></td>
+                        <td>@issue.Fine?.Amount.ToString("N2")<div class="table-subtext">@issue.Fine?.Status</div></td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="data-panel">
+    <div class="panel-heading"><div><h2>Stock by title</h2><p>Physical availability and exceptions by catalogue title.</p></div></div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Title</th><th>Total</th><th>Available</th><th>Issued</th><th>Lost</th><th>Damaged / withdrawn</th></tr></thead>
+            <tbody>
+            @foreach (var row in Model.Stock)
+            {
+                <tr><td><strong>@row.Title</strong></td><td>@row.Total</td><td>@row.Available</td><td>@row.Issued</td><td>@row.Lost</td><td>@row.Other</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>

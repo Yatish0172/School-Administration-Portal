@@ -1,0 +1,260 @@
+@using SchoolPortal.Domain.Academics
+@model SchoolPortal.Web.Pages.Academics.IndexModel
+
+<div class="modal fade" id="yearModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="CreateYear">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5">Add Academic Year</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body modal-form-grid">
+                    <div>
+                        <label asp-for="NewAcademicYear.Name" class="form-label"></label>
+                        <input asp-for="NewAcademicYear.Name" class="form-control" placeholder="2026-27" />
+                    </div>
+                    <div>
+                        <label asp-for="NewAcademicYear.StartDate" class="form-label"></label>
+                        <input asp-for="NewAcademicYear.StartDate" class="form-control" type="date" min="@Model.YearMinimumIso" />
+                    </div>
+                    <div>
+                        <label asp-for="NewAcademicYear.EndDate" class="form-label"></label>
+                        <input asp-for="NewAcademicYear.EndDate" class="form-control" type="date" min="@Model.YearMinimumIso" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary">Create year</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="editYearModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="UpdateYear">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5">Edit Academic Year Dates</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body modal-form-grid">
+                    <input asp-for="EditAcademicYear.Id" type="hidden" id="edit-year-id" />
+                    <input asp-for="EditAcademicYear.Name" type="hidden" id="edit-year-name" />
+                    <input asp-for="EditAcademicYear.Version" type="hidden" id="edit-year-version" />
+                    <p class="mb-0 fw-semibold" id="edit-year-label"></p>
+                    <div>
+                        <label asp-for="EditAcademicYear.StartDate" class="form-label"></label>
+                        <input asp-for="EditAcademicYear.StartDate" class="form-control" id="edit-year-start" type="date" min="@Model.YearMinimumIso" />
+                    </div>
+                    <div>
+                        <label asp-for="EditAcademicYear.EndDate" class="form-label"></label>
+                        <input asp-for="EditAcademicYear.EndDate" class="form-control" id="edit-year-end" type="date" min="@Model.YearMinimumIso" />
+                    </div>
+                    <p class="form-text mb-0">This year becomes the active year after saving, unless its end date has passed.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary">Save dates</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="classSetupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="BulkSetupClasses">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5">Set Up Classes and Sections</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body modal-form-grid">
+                    <p class="text-muted mb-0">Choose any range from Nursery to Class 12. Missing classes and lettered sections are created together.</p>
+                    <div class="row g-3">
+                        <div class="col">
+                            <label asp-for="BulkClassSetup.FromClassKey" class="form-label"></label>
+                            <select asp-for="BulkClassSetup.FromClassKey" class="form-select">
+                                @foreach (var option in SchoolPortal.Web.Pages.Academics.IndexModel.PresetClasses)
+                                {
+                                    <option value="@option.Key">@option.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label asp-for="BulkClassSetup.ToClassKey" class="form-label"></label>
+                            <select asp-for="BulkClassSetup.ToClassKey" class="form-select">
+                                @foreach (var option in SchoolPortal.Web.Pages.Academics.IndexModel.PresetClasses)
+                                {
+                                    <option value="@option.Key">@option.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label asp-for="BulkClassSetup.SectionCount" class="form-label"></label>
+                        <input asp-for="BulkClassSetup.SectionCount" class="form-control" type="number" min="1" max="26" />
+                    </div>
+                    <div>
+                        <label asp-for="BulkClassSetup.SectionCapacity" class="form-label"></label>
+                        <input asp-for="BulkClassSetup.SectionCapacity" class="form-control" type="number" min="1" max="500" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary">Create Class Range</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="sectionCountModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="SetSectionCount">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5">Edit Sections for <span id="section-count-class-name"></span></h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body modal-form-grid">
+                    <input asp-for="SectionCount.ClassId" type="hidden" id="section-count-class-id" />
+                    <div>
+                        <label asp-for="SectionCount.DesiredCount" class="form-label"></label>
+                        <input asp-for="SectionCount.DesiredCount" class="form-control" type="number" min="1" max="26" />
+                    </div>
+                    <div>
+                        <label asp-for="SectionCount.Capacity" class="form-label"></label>
+                        <input asp-for="SectionCount.Capacity" class="form-control" type="number" min="1" max="500" />
+                    </div>
+                    <p class="form-text">Increasing adds lettered sections. Reducing removes extra sections from the active setup.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit"
+                            class="btn btn-outline-danger me-auto"
+                            asp-page-handler="RemoveClass"
+                            name="id"
+                            id="remove-class-id"
+                            onclick="return confirm('Remove this class from the active setup?')">Remove Class</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary">Apply Section Count</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editSectionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="UpdateSection">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5">Edit Section</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body modal-form-grid">
+                    <input asp-for="EditSection.Id" type="hidden" id="edit-section-id" />
+                    <input asp-for="EditSection.Version" type="hidden" id="edit-section-version" />
+                    <div>
+                        <label asp-for="EditSection.Name" class="form-label"></label>
+                        <input asp-for="EditSection.Name" class="form-control" id="edit-section-name" />
+                    </div>
+                    <div>
+                        <label asp-for="EditSection.Capacity" class="form-label"></label>
+                        <input asp-for="EditSection.Capacity" class="form-control" id="edit-section-capacity" type="number" />
+                    </div>
+                    <div>
+                        <label asp-for="EditSection.ClassTeacherUserId" class="form-label"></label>
+                        <select asp-for="EditSection.ClassTeacherUserId" class="form-select" id="edit-section-teacher">
+                            <option value="">Not assigned</option>
+                            @foreach (var teacher in Model.Teachers)
+                            {
+                                <option value="@teacher.Id">@Model.TeacherNames.GetValueOrDefault(teacher.Id, teacher.UserName ?? "Teacher")</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary">Save Section</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="subjectTeacherModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="SaveSubjectTeacher">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5">Add Subject and Teacher Assignment</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body modal-form-grid">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="NewSubjectTeacherAssignment.SubjectName" class="form-label"></label>
+                            <input asp-for="NewSubjectTeacherAssignment.SubjectName" class="form-control" list="subject-name-options" />
+                            <datalist id="subject-name-options">
+                                @foreach (var name in Model.Subjects.Select(x => x.Name).Distinct().OrderBy(x => x))
+                                {
+                                    <option value="@name"></option>
+                                }
+                            </datalist>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="NewSubjectTeacherAssignment.TeacherUserId" class="form-label"></label>
+                            <select asp-for="NewSubjectTeacherAssignment.TeacherUserId" class="form-select">
+                                <option value="">Choose Teacher</option>
+                                @foreach (var teacher in Model.Teachers)
+                                {
+                                    <option value="@teacher.Id">@Model.TeacherNames.GetValueOrDefault(teacher.Id, teacher.UserName ?? "Teacher")</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="assignment-checklists">
+                        <fieldset>
+                            <legend>Classes</legend>
+                            <div class="checklist-box" id="assignment-classes">
+                                @foreach (var schoolClass in Model.Classes.Where(x => x.IsActive && Model.Sections.Any(section => section.ClassId == x.Id)))
+                                {
+                                    <label class="checklist-option">
+                                        <input type="checkbox"
+                                               name="NewSubjectTeacherAssignment.ClassIds"
+                                               value="@schoolClass.Id"
+                                               data-assignment-class="@schoolClass.Id" />
+                                        <span>@schoolClass.Name</span>
+                                    </label>
+                                }
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Sections</legend>
+                            <div class="checklist-box" id="assignment-sections">
+                                @foreach (var sectionItem in Model.Sections.Where(x => x.IsActive))
+                                {
+                                    <label class="checklist-option assignment-section-option" data-class-id="@sectionItem.ClassId" hidden>
+                                        <input type="checkbox"
+                                               name="NewSubjectTeacherAssignment.SectionIds"
+                                               value="@sectionItem.Id" />
+                                        <span>@sectionItem.Class.Name - @sectionItem.Name</span>
+                                    </label>
+                                }
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary">Save Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<partial name="_AcademicBreakModal" model="Model" />

@@ -1,0 +1,191 @@
+@page
+@model SchoolPortal.Web.Pages.Staff.IndexModel
+@{
+    ViewData["Title"] = "Staff Details";
+}
+
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Administration</p>
+        <h1>Staff Details</h1>
+    </div>
+    <button type="button" class="btn btn-primary add-staff-button" data-bs-toggle="modal" data-bs-target="#addStaffModal">
+        Add Staff
+    </button>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success feedback-toast" data-auto-dismiss="5000">@Model.StatusMessage</div>
+}
+<div asp-validation-summary="All" class="alert alert-danger feedback-toast" data-auto-dismiss="5000"></div>
+
+<div class="module-layout">
+<section class="data-panel">
+    <div class="panel-heading">
+        <div><h2>Teachers</h2></div>
+        <button type="button"
+                class="btn btn-primary add-teacher-button"
+                data-bs-toggle="modal"
+                data-bs-target="#addStaffModal">
+            Add Teacher
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Teacher</th><th>Subjects</th><th>Classes</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+            @foreach (var teacher in Model.Teachers)
+            {
+                <tr>
+                    <td>
+                        <div class="teacher-name-cell">
+                            @if (teacher.IsClassTeacher)
+                            {
+                                <span class="ct-badge" title="Class Teacher">CT</span>
+                            }
+                            <button type="button"
+                                    class="teacher-name-button teacher-details-button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#teacherDetailsModal"
+                                    data-teacher='@System.Text.Json.JsonSerializer.Serialize(teacher)'>
+                                @teacher.Name
+                            </button>
+                        </div>
+                    </td>
+                    <td>@teacher.Subjects</td>
+                    <td>@teacher.Classes</td>
+                    <td class="text-end">
+                        @{
+                            var teacherStaff = teacher.StaffId.HasValue
+                                ? Model.StaffMembers.FirstOrDefault(
+                                    x => x.Id == teacher.StaffId.Value)
+                                : null;
+                        }
+                        @if (teacherStaff is not null)
+                        {
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary edit-staff-button teacher-edit-button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editStaffModal"
+                                    data-staff='@System.Text.Json.JsonSerializer.Serialize(teacherStaff)'
+                                    aria-label="Edit @teacher.Name"
+                                    title="Edit teacher">
+                                &#9998;
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary add-teacher-details-button teacher-edit-button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#addStaffModal"
+                                    data-user-id="@teacher.UserId"
+                                    aria-label="Add details for @teacher.Name"
+                                    title="Edit teacher">
+                                &#9998;
+                            </button>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (Model.Teachers.Count == 0)
+            {
+                <tr><td colspan="4" class="empty-cell">No teacher details saved.</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+<section class="data-panel">
+    <div class="panel-heading"><div><h2>All Staff</h2></div></div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Staff</th>
+                    <th>Designation</th>
+                    <th>Contact</th>
+                    <th>Address</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var staff in Model.StaffMembers)
+            {
+                <tr class="@(staff.IsActive ? null : "text-muted")">
+                    <td>
+                        <strong>@staff.FullName</strong>
+                        <div class="table-subtext">@staff.StaffNumber</div>
+                    </td>
+                    <td>
+                        @staff.Designation
+                        @if (!string.IsNullOrWhiteSpace(staff.Department))
+                        {
+                            <div class="table-subtext">@staff.Department</div>
+                        }
+                    </td>
+                    <td>
+                        <div>@staff.Phone</div>
+                        <div class="table-subtext">@staff.Email</div>
+                    </td>
+                    <td>@staff.Address, @staff.City, @staff.State @staff.PostalCode</td>
+                    <td class="text-end">
+                        <button type="button"
+                                class="btn btn-sm btn-outline-primary edit-staff-button"
+                                data-bs-toggle="modal"
+                                data-bs-target="#editStaffModal"
+                                data-staff='@System.Text.Json.JsonSerializer.Serialize(staff)'>
+                            Edit
+                        </button>
+                    </td>
+                </tr>
+            }
+            @if (Model.StaffMembers.Count == 0)
+            {
+                <tr><td colspan="5" class="empty-cell">No staff details saved.</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+</div>
+
+<div class="modal fade" id="teacherDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="teacher-modal-title">
+                    <span class="ct-badge" id="teacher-details-ct" title="Class Teacher">CT</span>
+                    <h2 class="modal-title fs-5" id="teacher-details-name">Teacher Details</h2>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="record-details teacher-details-grid">
+                    <div><dt>Staff Number</dt><dd id="teacher-details-staff-number"></dd></div>
+                    <div><dt>Designation</dt><dd id="teacher-details-designation"></dd></div>
+                    <div><dt>Department</dt><dd id="teacher-details-department"></dd></div>
+                    <div><dt>Employment Type</dt><dd id="teacher-details-employment-type"></dd></div>
+                    <div><dt>Date Of Joining</dt><dd id="teacher-details-joining"></dd></div>
+                    <div><dt>Phone</dt><dd id="teacher-details-phone"></dd></div>
+                    <div><dt>Alternate Phone</dt><dd id="teacher-details-alternate-phone"></dd></div>
+                    <div><dt>Email</dt><dd id="teacher-details-email"></dd></div>
+                    <div class="detail-span-2"><dt>Address</dt><dd id="teacher-details-address"></dd></div>
+                    <div><dt>Emergency Contact</dt><dd id="teacher-details-emergency-name"></dd></div>
+                    <div><dt>Emergency Phone</dt><dd id="teacher-details-emergency-phone"></dd></div>
+                    <div class="detail-span-2"><dt>Subjects Taught</dt><dd id="teacher-details-subjects"></dd></div>
+                    <div class="detail-span-2"><dt>Teaching Classes</dt><dd id="teacher-details-classes"></dd></div>
+                    <div class="detail-span-2"><dt>Class Teacher Of</dt><dd id="teacher-details-class-teacher"></dd></div>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+<partial name="_StaffModal" model="Model" />
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/staff.js" asp-append-version="true"></script>
+}

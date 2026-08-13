@@ -1,0 +1,202 @@
+@page
+@model SchoolPortal.Web.Pages.Reports.IndexModel
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">Reporting centre</p>
+        <h1>Standard reports and authorized exports</h1>
+        <p>Run approved reports with module permissions, record scope, row limits, and export auditing enforced.</p>
+    </div>
+    @if (Model.CanExport)
+    {
+        <span class="badge text-bg-success">Excel and PDF export authorized</span>
+    }
+    else
+    {
+        <span class="badge text-bg-secondary">Screen access only</span>
+    }
+</section>
+
+<section class="module-grid mb-3" aria-label="Available standard reports">
+    @foreach (var report in Model.Catalogue)
+    {
+        <article class="module-card">
+            <div class="module-card-heading">
+                <h2>@report.Name</h2>
+                <span class="badge text-bg-light">@report.Module</span>
+            </div>
+            <p>@report.Description</p>
+            @if (report.IsSensitive)
+            {
+                <span class="module-state">Confidential export - audited</span>
+            }
+        </article>
+    }
+</section>
+
+<section class="data-panel mb-3">
+    <div class="panel-heading">
+        <div>
+            <h2>Run a report</h2>
+            <p>Filters are approved fields only; report data always comes from the live PostgreSQL records.</p>
+        </div>
+    </div>
+    <form method="get" class="filter-bar">
+        <div>
+            <label asp-for="ReportKey" class="form-label">Report</label>
+            <select asp-for="ReportKey" class="form-select">
+                <option value="">Choose a report</option>
+                @foreach (var report in Model.Catalogue)
+                {
+                    <option value="@report.Key">@report.Name</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label asp-for="From" class="form-label">From</label>
+            <input asp-for="From" class="form-control" type="date" />
+        </div>
+        <div>
+            <label asp-for="To" class="form-label">To</label>
+            <input asp-for="To" class="form-control" type="date" />
+        </div>
+        <div>
+            <label asp-for="AcademicYearId" class="form-label">Academic year</label>
+            <select asp-for="AcademicYearId" class="form-select">
+                <option value="">All / current scope</option>
+                @foreach (var year in Model.AcademicYears)
+                {
+                    <option value="@year.Id">@year.Name</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label asp-for="SectionId" class="form-label">Section</label>
+            <select asp-for="SectionId" class="form-select">
+                <option value="">All permitted sections</option>
+                @foreach (var sectionOption in Model.Sections)
+                {
+                    <option value="@sectionOption.Id">@(sectionOption.AcademicYear.Name) - @(sectionOption.Class.Name) @(sectionOption.Name)</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label asp-for="ExaminationId" class="form-label">Examination</label>
+            <select asp-for="ExaminationId" class="form-select">
+                <option value="">All examinations</option>
+                @foreach (var examination in Model.Examinations)
+                {
+                    <option value="@examination.Id">@examination.Name - @examination.Term</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label asp-for="Status" class="form-label">Status</label>
+            <select asp-for="Status" class="form-select">
+                <option value="">All statuses</option>
+                <option value="Issued">Issued</option>
+                <option value="Returned">Returned</option>
+                <option value="Lost">Lost</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Run report</button>
+    </form>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="alert alert-warning" role="alert">@Model.ErrorMessage</div>
+}
+
+@if (Model.Preview is not null)
+{
+    <section class="data-panel">
+        <div class="panel-heading">
+            <div>
+                <h2>@Model.Preview.Definition.Name</h2>
+                <p>@Model.Preview.Rows.Count.ToString("N0") rows - generated @Model.Preview.GeneratedAtUtc.ToString("dd MMM yyyy HH:mm:ss") UTC</p>
+            </div>
+            @if (Model.CanExport)
+            {
+                <div class="record-actions">
+                    <a asp-page-handler="Export"
+                       asp-route-format="xlsx"
+                       asp-route-ReportKey="@Model.ReportKey"
+                       asp-route-From="@Model.From?.ToString("yyyy-MM-dd")"
+                       asp-route-To="@Model.To?.ToString("yyyy-MM-dd")"
+                       asp-route-AcademicYearId="@Model.AcademicYearId"
+                       asp-route-SectionId="@Model.SectionId"
+                       asp-route-ExaminationId="@Model.ExaminationId"
+                       asp-route-Status="@Model.Status"
+                       class="btn btn-outline-primary">Export Excel</a>
+                    <a asp-page-handler="Export"
+                       asp-route-format="pdf"
+                       asp-route-ReportKey="@Model.ReportKey"
+                       asp-route-From="@Model.From?.ToString("yyyy-MM-dd")"
+                       asp-route-To="@Model.To?.ToString("yyyy-MM-dd")"
+                       asp-route-AcademicYearId="@Model.AcademicYearId"
+                       asp-route-SectionId="@Model.SectionId"
+                       asp-route-ExaminationId="@Model.ExaminationId"
+                       asp-route-Status="@Model.Status"
+                       class="btn btn-outline-primary">Export PDF</a>
+                </div>
+            }
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        @foreach (var column in Model.Preview.Definition.Columns)
+                        {
+                            <th>@column.Label</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Preview.Rows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="@Model.Preview.Definition.Columns.Count" class="empty-cell">
+                                No records match the selected filters.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in Model.Preview.Rows.Take(250))
+                        {
+                            <tr>
+                                @foreach (var column in Model.Preview.Definition.Columns)
+                                {
+                                    row.TryGetValue(column.Key, out var value);
+                                    <td>@FormatValue(value, column.Kind)</td>
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.Preview.Rows.Count > 250)
+        {
+            <p class="text-muted px-3 pb-3">Preview limited to 250 rows. Authorized exports include the full filtered result.</p>
+        }
+    </section>
+}
+
+@functions {
+    private static string FormatValue(object? value, SchoolPortal.Web.Reporting.ReportValueKind kind) =>
+        value switch
+        {
+            null => string.Empty,
+            DateOnly date => date.ToString("dd MMM yyyy"),
+            DateTimeOffset date => date.ToString("dd MMM yyyy HH:mm"),
+            decimal number when kind == SchoolPortal.Web.Reporting.ReportValueKind.Percentage => number.ToString("P1"),
+            decimal number => number.ToString("N2"),
+            double number when kind == SchoolPortal.Web.Reporting.ReportValueKind.Percentage => number.ToString("P1"),
+            _ => Convert.ToString(value) ?? string.Empty,
+        };
+}

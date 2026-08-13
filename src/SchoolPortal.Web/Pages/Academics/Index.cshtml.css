@@ -1,0 +1,104 @@
+.academics-layout {
+  padding-bottom: 2rem;
+}
+
+.section-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 16rem;
+}
+
+.modal-form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.modal-form-grid .form-text {
+  margin: 0;
+}
+
+.modal-dialog-scrollable {
+  max-height: calc(100vh - 2rem);
+}
+
+.modal-dialog-scrollable .modal-content {
+  max-height: calc(100vh - 2rem);
+}
+
+@media (max-width: 575.98px) {
+  .panel-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .panel-heading > .btn {
+    width: 100%;
+  }
+}
+
+.class-teacher-list {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 12rem;
+}
+
+.panel-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.panel-actions .form-select {
+  min-width: 12rem;
+}
+
+@media (max-width: 575.98px) {
+  .panel-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+.assignment-checklists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.assignment-checklists fieldset {
+  min-width: 0;
+}
+
+.assignment-checklists legend {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.checklist-box {
+  height: 19rem;
+  padding: 0.5rem;
+  border: 1px solid var(--portal-border);
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  overflow-y: auto;
+}
+
+.checklist-option {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.checklist-option:hover {
+  background: #eef4ff;
+}
+
+@media (max-width: 767px) {
+  .assignment-checklists {
+    grid-template-columns: 1fr;
+  }
+}

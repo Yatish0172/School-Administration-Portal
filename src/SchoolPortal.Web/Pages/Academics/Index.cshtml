@@ -1,0 +1,211 @@
+@page
+@using SchoolPortal.Domain.Academics
+@model SchoolPortal.Web.Pages.Academics.IndexModel
+@{
+    ViewData["Title"] = "Academic Structure";
+}
+
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Academics</p>
+        <h1>Academic Structure</h1>
+        <p>Configure years, Nursery-Class 12, sections, subjects, teachers, and common break times.</p>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success feedback-toast" data-auto-dismiss="5000">@Model.StatusMessage</div>
+}
+<div asp-validation-summary="All" class="alert alert-danger feedback-toast" data-auto-dismiss="5000"></div>
+
+<div class="module-layout academics-layout">
+    <section class="data-panel">
+        <div class="panel-heading">
+            <div>
+                <h2>Academic Years</h2>
+            </div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#yearModal">Add Year</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr><th>Year</th><th>Dates</th><th class="text-end">Actions</th></tr></thead>
+                <tbody>
+                @foreach (var year in Model.AcademicYears)
+                {
+                    <tr>
+                        <td class="fw-semibold">@year.Name</td>
+                        <td>@year.StartDate.ToString("dd MMM yyyy") - @year.EndDate.ToString("dd MMM yyyy")</td>
+                        <td class="text-end">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary icon-button edit-year-button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editYearModal"
+                                    data-id="@year.Id"
+                                    data-name="@year.Name"
+                                    data-start="@year.StartDate.ToString("yyyy-MM-dd")"
+                                    data-end="@year.EndDate.ToString("yyyy-MM-dd")"
+                                    data-version="@year.Version"
+                                    title="Edit academic year dates"
+                                    aria-label="Edit @year.Name dates">&#9998;</button>
+                        </td>
+                    </tr>
+                }
+                @if (Model.AcademicYears.Count == 0)
+                {
+                    <tr><td colspan="3" class="empty-cell">Create the first academic year to begin.</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="data-panel">
+        <div class="panel-heading">
+            <div><h2>Classes and Sections</h2></div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#classSetupModal">Set Up Classes</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr><th>Class</th><th>Sections</th><th>Class Teachers</th><th class="text-end">Actions</th></tr></thead>
+                <tbody>
+                @foreach (var schoolClass in Model.Classes.Where(x => x.IsActive))
+                {
+                    var classSections = Model.Sections.Where(x => x.ClassId == schoolClass.Id).ToArray();
+                    <tr>
+                        <td class="fw-semibold">@schoolClass.Name</td>
+                        <td>
+                            <div class="section-chip-list">
+                            @foreach (var sectionItem in classSections)
+                            {
+                                <button type="button"
+                                        class="btn btn-sm @(sectionItem.IsActive ? "btn-outline-primary" : "btn-outline-secondary") edit-section-button"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editSectionModal"
+                                        data-id="@sectionItem.Id"
+                                        data-name="@sectionItem.Name"
+                                        data-capacity="@sectionItem.Capacity"
+                                        data-teacher="@sectionItem.ClassTeacherUserId"
+                                        data-active="@sectionItem.IsActive.ToString().ToLowerInvariant()"
+                                        data-version="@sectionItem.Version">
+                                    @sectionItem.Name
+                                </button>
+                            }
+                            @if (classSections.Length == 0) { <span class="text-muted">No sections</span> }
+                            </div>
+                        </td>
+                        <td>
+                            <div class="class-teacher-list">
+                            @foreach (var sectionItem in classSections)
+                            {
+                                var teacherName = sectionItem.ClassTeacherUserId.HasValue
+                                    ? Model.TeacherNames.GetValueOrDefault(sectionItem.ClassTeacherUserId.Value, "Not assigned")
+                                    : "Not assigned";
+                                <div><strong>@sectionItem.Name:</strong> @teacherName</div>
+                            }
+                            @if (classSections.Length == 0) { <span class="text-muted">Not assigned</span> }
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary icon-button section-count-button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#sectionCountModal"
+                                    data-class-id="@schoolClass.Id"
+                                    data-class-name="@schoolClass.Name"
+                                    data-section-count="@classSections.Length"
+                                    data-capacity="@(classSections.FirstOrDefault()?.Capacity ?? 40)"
+                                    title="Edit sections for @schoolClass.Name"
+                                    aria-label="Edit sections for @schoolClass.Name">&#9998;</button>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Classes.Any(x => x.IsActive))
+                {
+                    <tr><td colspan="4" class="empty-cell">Use "Set up classes" to create Nursery through Class 12.</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="data-panel">
+        <div class="panel-heading">
+            <div><h2>Subjects and Teacher Assignments</h2></div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#subjectTeacherModal">Add Subject Assignment</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr><th>Teacher</th><th>Subject</th><th>Classes</th></tr></thead>
+                <tbody>
+                @foreach (var assignment in Model.SubjectTeacherAssignments)
+                {
+                    <tr>
+                        <td class="fw-semibold">@assignment.Teacher</td>
+                        <td>@assignment.Subject</td>
+                        <td>@assignment.Classes</td>
+                    </tr>
+                }
+                @if (Model.SubjectTeacherAssignments.Count == 0)
+                {
+                    <tr><td colspan="3" class="empty-cell">No subject and teacher assignments configured.</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <section class="data-panel">
+        <div class="panel-heading">
+            <div>
+                <h2>Lunch and Break Times</h2>
+            </div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#breakModal">Add Break</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr><th>Name</th><th>Time</th><th>Applies to</th><th class="text-end">Actions</th></tr></thead>
+                <tbody>
+                @foreach (var breakItem in Model.BreakPeriods)
+                {
+                    var scopeLabel = breakItem.Scope == AcademicBreakScope.AllClasses
+                        ? "All classes"
+                        : $"{breakItem.FromClass?.Name} to {breakItem.ToClass?.Name}";
+                    <tr>
+                        <td class="fw-semibold">@breakItem.Name</td>
+                        <td>@breakItem.StartsAt.ToString("hh:mm tt") - @breakItem.EndsAt.ToString("hh:mm tt")</td>
+                        <td>@scopeLabel</td>
+                        <td class="text-end">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary edit-break-button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editBreakModal"
+                                    data-id="@breakItem.Id"
+                                    data-name="@breakItem.Name"
+                                    data-scope="@breakItem.Scope"
+                                    data-from="@breakItem.FromClassId"
+                                    data-to="@breakItem.ToClassId"
+                                    data-start="@breakItem.StartsAt.ToString("HH:mm")"
+                                    data-end="@breakItem.EndsAt.ToString("HH:mm")"
+                                    data-active="@breakItem.IsActive.ToString().ToLowerInvariant()"
+                                    data-version="@breakItem.Version">
+                                Edit
+                            </button>
+                        </td>
+                    </tr>
+                }
+                @if (Model.BreakPeriods.Count == 0)
+                {
+                    <tr><td colspan="4" class="empty-cell">No lunch or break times configured.</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<partial name="_AcademicModals" model="Model" />
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/academics.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,25 @@
+@model SchoolPortal.Web.Pages.Staff.IndexModel
+
+<div class="modal fade" id="addStaffModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-header"><h2 class="modal-title fs-5" id="add-staff-modal-title">Add Staff Details</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><partial name="_StaffFields" model="Model" view-data='new ViewDataDictionary(ViewData) { ["Prefix"] = "NewStaff", ["Editing"] = false }' /></div>
+                <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="add-staff-submit">Save Staff</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editStaffModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Update">
+                <div class="modal-header"><h2 class="modal-title fs-5" id="edit-staff-modal-title">Edit Staff Details</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><partial name="_StaffFields" model="Model" view-data='new ViewDataDictionary(ViewData) { ["Prefix"] = "EditStaff", ["Editing"] = true }' /></div>
+                <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary">Save changes</button></div>
+            </form>
+        </div>
+    </div>
+</div>

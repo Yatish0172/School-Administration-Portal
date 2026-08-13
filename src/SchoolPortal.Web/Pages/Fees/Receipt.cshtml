@@ -1,0 +1,87 @@
+@page
+@model SchoolPortal.Web.Pages.Fees.ReceiptModel
+@{
+    ViewData["Title"] = $"Receipt {Model.Receipt.ReceiptNumber}";
+    var enrollment = Model.Payment.StudentEnrollment;
+}
+
+<div class="receipt-actions mb-3">
+    <a asp-page="/Fees/Ledger" asp-route-EnrollmentId="@enrollment.Id" class="btn btn-outline-primary">Back to ledger</a>
+    <form method="post" asp-page-handler="Print">
+        <input type="hidden" name="number" value="@Model.Receipt.ReceiptNumber" />
+        <button type="submit" class="btn btn-primary">Print receipt</button>
+    </form>
+</div>
+
+<article class="receipt-page">
+    @if (Model.IsDuplicate)
+    {
+        <div class="receipt-watermark">DUPLICATE</div>
+    }
+    @if (Model.Payment.Status == SchoolPortal.Domain.Fees.FeePaymentStatus.Reversed)
+    {
+        <div class="alert alert-danger text-center fw-bold">REVERSED — this receipt is no longer valid</div>
+    }
+    <header class="receipt-header">
+        <div>
+            <p class="eyebrow">School Administration Portal</p>
+            <h1>Fee receipt</h1>
+            <p class="text-muted mb-0">Official student fee transaction record</p>
+        </div>
+        <div class="text-end">
+            <strong>@Model.Receipt.ReceiptNumber</strong>
+            <div class="text-muted">@Model.Receipt.IssuedAtUtc.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</div>
+        </div>
+    </header>
+
+    <dl class="record-details mb-4">
+        <div><dt>Student</dt><dd>@enrollment.Student.FullName</dd></div>
+        <div><dt>Admission number</dt><dd>@enrollment.Student.AdmissionNumber</dd></div>
+        <div><dt>Class and section</dt><dd>@enrollment.Class.Name @enrollment.Section.Name</dd></div>
+        <div><dt>Academic year</dt><dd>@enrollment.AcademicYear.Name</dd></div>
+        <div><dt>Payment date</dt><dd>@Model.Payment.PaymentDate.ToString("dd MMM yyyy")</dd></div>
+        <div><dt>Mode</dt><dd>@Model.Payment.Mode</dd></div>
+        <div><dt>Reference</dt><dd>@(Model.Payment.Reference ?? "—")</dd></div>
+        <div><dt>Bank / provider</dt><dd>@(Model.Payment.BankName ?? "—")</dd></div>
+    </dl>
+
+    <table class="table table-bordered align-middle">
+        <thead><tr><th>Fee head</th><th>Description</th><th>Period</th><th class="text-end">Amount</th></tr></thead>
+        <tbody>
+        @foreach (var allocation in Model.Payment.Allocations.OrderBy(x => x.StudentCharge.DueDate))
+        {
+            <tr>
+                <td>@allocation.StudentCharge.FeeHead.Name</td>
+                <td>@allocation.StudentCharge.Description</td>
+                <td>@allocation.StudentCharge.Period</td>
+                <td class="text-end">@allocation.Amount.ToString("N2")</td>
+            </tr>
+        }
+        <tr class="fw-bold">
+            <td colspan="3" class="text-end">Total received</td>
+            <td class="text-end">@Model.Payment.Amount.ToString("N2")</td>
+        </tr>
+        </tbody>
+    </table>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Payment.Remarks))
+    {
+        <p><strong>Note:</strong> @Model.Payment.Remarks</p>
+    }
+    @if (Model.Payment.Reversal is not null)
+    {
+        <p class="text-danger"><strong>Reversal reason:</strong> @Model.Payment.Reversal.Reason</p>
+    }
+
+    <footer class="receipt-signatures">
+        <div><span></span>Payer</div>
+        <div><span></span>Cashier / Accounts</div>
+    </footer>
+</article>
+
+@if (Model.PrintNow)
+{
+    @section Scripts {
+        <script>window.addEventListener("load", () => window.print());</script>
+    }
+}

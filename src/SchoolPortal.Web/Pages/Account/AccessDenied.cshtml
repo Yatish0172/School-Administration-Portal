@@ -1,0 +1,16 @@
+@page
+@model SchoolPortal.Web.Pages.Account.AccessDeniedModel
+@{
+    ViewData["Title"] = "Access denied";
+}
+
+<div class="auth-shell">
+    <section class="auth-card text-center">
+        <p class="eyebrow">Permission required</p>
+        <h1>Access denied</h1>
+        <p class="text-muted">
+            Your account does not have permission to open this area.
+        </p>
+        <a asp-page="/Index" class="btn btn-primary">Return to dashboard</a>
+    </section>
+</div>

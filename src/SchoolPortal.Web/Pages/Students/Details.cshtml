@@ -1,0 +1,102 @@
+@page "{id:guid}"
+@using SchoolPortal.Domain.Students
+@model SchoolPortal.Web.Pages.Students.DetailsModel
+@{
+    ViewData["Title"] = Model.Student.FullName;
+}
+
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">@Model.Student.AdmissionNumber</p>
+        <h1>@Model.Student.FullName</h1>
+        <p>Admitted @Model.Student.AdmissionDate.ToString("dd MMM yyyy")</p>
+    </div>
+    <div class="table-actions">
+        <a asp-page="/Students/Index" class="btn btn-outline-secondary">Back to students</a>
+        @if (Model.CanEdit)
+        {
+            <a asp-page="/Students/Edit" asp-route-id="@Model.Student.Id" class="btn btn-primary">Edit profile</a>
+        }
+    </div>
+</div>
+
+@if (TempData["StatusMessage"] is string statusMessage)
+{
+    <div class="alert alert-success">@statusMessage</div>
+}
+<div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+<div class="detail-grid">
+    <section class="data-panel">
+        <div class="panel-heading"><div><h2>Profile</h2></div></div>
+        <dl class="record-details">
+            <div><dt>Status</dt><dd><span class="status-pill status-@Model.Student.Status.ToString().ToLowerInvariant()">@Model.Student.Status</span></dd></div>
+            <div><dt>Date of birth</dt><dd>@(Model.Student.DateOfBirth?.ToString("dd MMM yyyy") ?? "—")</dd></div>
+            <div><dt>Gender</dt><dd>@(Model.Student.Gender ?? "—")</dd></div>
+            <div><dt>Blood group</dt><dd>@(Model.Student.BloodGroup ?? "—")</dd></div>
+            <div><dt>Category</dt><dd>@(Model.Student.Category ?? "—")</dd></div>
+            <div><dt>Nationality</dt><dd>@Model.Student.Nationality</dd></div>
+            @if (Model.CanViewSensitive)
+            {
+                <div><dt>Aadhaar</dt><dd>@(Model.Student.AadhaarNumber ?? "—")</dd></div>
+                <div><dt>Permanent address</dt><dd>@(Model.Student.PermanentAddress ?? "—")</dd></div>
+                <div><dt>Correspondence</dt><dd>@(Model.Student.CorrespondenceAddress ?? "—")</dd></div>
+            }
+            <div><dt>City / state</dt><dd>@string.Join(", ", new[] { Model.Student.City, Model.Student.State }.Where(x => !string.IsNullOrWhiteSpace(x)))</dd></div>
+            <div><dt>Previous school</dt><dd>@(Model.Student.PreviousSchool ?? "—")</dd></div>
+            <div><dt>Remarks</dt><dd>@(Model.Student.Remarks ?? "—")</dd></div>
+        </dl>
+    </section>
+
+    <section class="data-panel">
+        <div class="panel-heading"><div><h2>Guardians</h2></div></div>
+        <div class="stack-list">
+            @foreach (var guardian in Model.Student.Guardians.OrderByDescending(x => x.IsPrimary))
+            {
+                <article class="stack-item">
+                    <div>
+                        <strong>@guardian.Name</strong>
+                        <span>@guardian.Relation @(guardian.IsPrimary ? "· Primary contact" : null)</span>
+                    </div>
+                    <div class="text-end">
+                        <div>@guardian.Phone</div>
+                        <div class="table-subtext">@guardian.Email</div>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <section class="data-panel detail-span-2">
+        <div class="panel-heading"><div><h2>Enrolment history</h2><p>Academic records are linked to these year-specific enrolments.</p></div></div>
+        <div class="table-responsive">
+            <table class="table">
+                <thead><tr><th>Year</th><th>Class</th><th>Section</th><th>Roll</th><th>Status</th></tr></thead>
+                <tbody>
+                @foreach (var enrollment in Model.Student.Enrollments.OrderByDescending(x => x.AcademicYear.StartDate))
+                {
+                    <tr>
+                        <td>@enrollment.AcademicYear.Name</td>
+                        <td>@enrollment.Class.Name</td>
+                        <td>@enrollment.Section.Name</td>
+                        <td>@enrollment.RollNumber</td>
+                        <td>@enrollment.Status</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    @if (Model.CanEdit)
+    {
+        <section class="data-panel detail-span-2 danger-panel">
+            <div class="panel-heading"><div><h2>Change student status</h2><p>Students are never hard-deleted.</p></div></div>
+            <form method="post" asp-page-handler="ChangeStatus" class="status-form">
+                <input asp-for="Version" type="hidden" />
+                <select asp-for="NewStatus" asp-items="Html.GetEnumSelectList<StudentStatus>()" class="form-select"></select>
+                <button type="submit" class="btn btn-outline-danger">Update status</button>
+            </form>
+        </section>
+    }
+</div>
