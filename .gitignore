@@ -6,3 +6,15 @@ css/app.css
 *.log
 .DS_Store
 Thumbs.db
+
+# ASP.NET Core / .NET build output
+**/bin/
+**/obj/
+.vs/
+TestResults/
+*.user
+*.suo
+
+# Local configuration and secrets
+appsettings.Local.json
+.env

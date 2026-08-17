@@ -1,0 +1,163 @@
+@page
+@model SchoolPortal.Web.Pages.Library.CirculationModel
+@{
+    ViewData["Title"] = "Library circulation";
+    var today = DateOnly.FromDateTime(DateTime.Today);
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">Library</p>
+        <h1>Circulation desk</h1>
+        <p>Issue, renew, return, and record lost copies against the central student record.</p>
+    </div>
+    <div class="record-actions">
+        <a asp-page="/Library/Index" class="btn btn-outline-primary">Catalogue</a>
+        <a asp-page="/Library/Reports" class="btn btn-outline-primary">Reports</a>
+        @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Library.ViewFines))
+        {
+            <a asp-page="/Library/Fines" class="btn btn-outline-primary">Fines</a>
+        }
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-info">@Model.StatusMessage</div>
+}
+<div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+<section class="data-panel mb-3">
+    <form method="get" class="filter-bar">
+        <div class="filter-search">
+            <label asp-for="StudentId" class="form-label">Student history filter</label>
+            <select asp-for="StudentId" class="form-select">
+                <option value="">All students</option>
+                @foreach (var student in Model.Students)
+                {
+                    <option value="@student.Id">@student.AdmissionNumber · @student.FullName</option>
+                }
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Open</button>
+        <a asp-page="/Library/Circulation" class="btn btn-outline-secondary">Clear</a>
+    </form>
+</section>
+
+<section class="dashboard-hero mb-3">
+    <div>
+        <p class="eyebrow">Current policy</p>
+        <h1>@Model.Policy.LoanDays-day loan</h1>
+        <p class="text-muted mb-0">Up to @Model.Policy.MaximumBooksPerStudent books and @Model.Policy.MaximumRenewals renewal(s) per student.</p>
+    </div>
+    <div class="text-end">
+        <div class="text-muted small">Fine per overdue day</div>
+        <div class="display-6 fw-bold">@Model.Policy.FinePerOverdueDay.ToString("N2")</div>
+    </div>
+</section>
+
+@if (Model.CanIssue)
+{
+    <section class="data-panel mb-3">
+        <div class="panel-heading"><div><h2>Issue a copy</h2><p>Availability and the student's active-loan limit are validated transactionally.</p></div></div>
+        <form method="post" asp-page-handler="Issue" class="form-grid form-grid-4">
+            <div class="form-span-2">
+                <label asp-for="Issue.StudentId" class="form-label">Student</label>
+                <select asp-for="Issue.StudentId" class="form-select">
+                    <option value="">Choose student</option>
+                    @foreach (var student in Model.Students) { <option value="@student.Id">@student.AdmissionNumber · @student.FullName</option> }
+                </select>
+            </div>
+            <div><label asp-for="Issue.AccessionNumber" class="form-label">Accession number</label><input asp-for="Issue.AccessionNumber" class="form-control" placeholder="ACC-000001" /></div>
+            <div><label asp-for="Issue.IssuedDate" class="form-label">Issue date</label><input asp-for="Issue.IssuedDate" class="form-control" type="date" /></div>
+            <div><button type="submit" class="btn btn-primary">Issue book</button></div>
+        </form>
+    </section>
+}
+
+<section class="data-panel mb-3">
+    <div class="panel-heading"><div><h2>Books out on loan</h2><p>@Model.ActiveIssues.Count active loan(s), ordered by due date.</p></div></div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Copy</th><th>Student</th><th>Issued</th><th>Due</th><th>Renewals</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+            @if (Model.ActiveIssues.Count == 0)
+            {
+                <tr><td colspan="7" class="empty-cell">No active loans.</td></tr>
+            }
+            else
+            {
+                @foreach (var issue in Model.ActiveIssues)
+                {
+                    var overdueDays = Math.Max(0, today.DayNumber - issue.DueDate.DayNumber);
+                    <tr>
+                        <td><strong>@issue.LibraryCopy.AccessionNumber</strong><div class="table-subtext">@issue.LibraryCopy.LibraryTitle.Title</div></td>
+                        <td>@issue.Student.FullName<div class="table-subtext">@issue.Student.AdmissionNumber</div></td>
+                        <td>@issue.IssuedDate.ToString("dd MMM yyyy")</td>
+                        <td>@issue.DueDate.ToString("dd MMM yyyy")</td>
+                        <td>@issue.RenewalCount / @Model.Policy.MaximumRenewals</td>
+                        <td>
+                            @if (overdueDays > 0) { <span class="status-pill status-left">@overdueDays day(s) overdue</span> }
+                            else { <span class="status-pill status-active">Current</span> }
+                        </td>
+                        <td>
+                            <div class="d-grid gap-2">
+                                @if (Model.CanIssue)
+                                {
+                                    <form method="post" asp-page-handler="Renew">
+                                        <input type="hidden" name="issueId" value="@issue.Id" /><input type="hidden" name="studentId" value="@issue.StudentId" />
+                                        <button type="submit" class="btn btn-sm btn-outline-primary" disabled="@(overdueDays > 0 || issue.RenewalCount >= Model.Policy.MaximumRenewals)">Renew</button>
+                                    </form>
+                                }
+                                @if (Model.CanReturn)
+                                {
+                                    <form method="post" asp-page-handler="Return" class="d-flex flex-wrap gap-2">
+                                        <input asp-for="Return.IssueId" type="hidden" value="@issue.Id" /><input asp-for="Return.StudentId" type="hidden" value="@issue.StudentId" />
+                                        <input asp-for="Return.ReturnedDate" class="form-control form-control-sm" type="date" value="@DateTime.Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" />
+                                        <select asp-for="Return.Condition" asp-items="Html.GetEnumSelectList<SchoolPortal.Domain.Library.LibraryCopyCondition>()" class="form-select form-select-sm"></select>
+                                        <button type="submit" class="btn btn-sm btn-primary">Return</button>
+                                    </form>
+                                    <form method="post" asp-page-handler="Lost" class="d-flex gap-2">
+                                        <input type="hidden" name="issueId" value="@issue.Id" /><input type="hidden" name="studentId" value="@issue.StudentId" />
+                                        <input asp-for="LossReason" class="form-control form-control-sm" minlength="5" required placeholder="Loss reason" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Mark lost</button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="data-panel">
+    <div class="panel-heading"><div><h2>Return and loss history</h2><p>The latest 100 closed loans remain linked to the student and physical copy.</p></div></div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Copy</th><th>Student</th><th>Issued</th><th>Closed</th><th>Status</th><th>Fine</th></tr></thead>
+            <tbody>
+            @if (Model.History.Count == 0)
+            {
+                <tr><td colspan="6" class="empty-cell">No closed circulation history.</td></tr>
+            }
+            else
+            {
+                @foreach (var issue in Model.History)
+                {
+                    <tr>
+                        <td>@issue.LibraryCopy.AccessionNumber<div class="table-subtext">@issue.LibraryCopy.LibraryTitle.Title</div></td>
+                        <td>@issue.Student.FullName<div class="table-subtext">@issue.Student.AdmissionNumber</div></td>
+                        <td>@issue.IssuedDate.ToString("dd MMM yyyy")</td>
+                        <td>@(issue.ReturnedDate?.ToString("dd MMM yyyy") ?? issue.LostAtUtc?.ToLocalTime().ToString("dd MMM yyyy"))</td>
+                        <td><span class="status-pill @(issue.Status == SchoolPortal.Domain.Library.BookIssueStatus.Returned ? "status-active" : "status-left")">@issue.Status</span><div class="table-subtext">@issue.LossReason</div></td>
+                        <td>@issue.Fine?.Amount.ToString("N2")<div class="table-subtext">@issue.Fine?.Status</div></td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>

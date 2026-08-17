@@ -1,0 +1,132 @@
+@page
+@model SchoolPortal.Web.Pages.Attendance.ReportsModel
+@{
+    ViewData["Title"] = "Attendance reports";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">Attendance</p>
+        <h1>Reports and follow-up</h1>
+        <p class="text-muted mb-0">Daily calls, monthly percentages, defaulters, and class comparison.</p>
+    </div>
+    <a asp-page="/Attendance/Index" class="btn btn-outline-primary">Back to register</a>
+</section>
+
+<section class="portal-panel mb-4">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-lg-4">
+            <label asp-for="SectionId" class="form-label">Section</label>
+            <select asp-for="SectionId" class="form-select">
+                @foreach (var option in Model.Sections)
+                {
+                    <option value="@option.Id">@option.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="From" class="form-label"></label>
+            <input asp-for="From" type="date" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="To" class="form-label"></label>
+            <input asp-for="To" type="date" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="ReportDate" class="form-label">Absent list date</label>
+            <input asp-for="ReportDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-1">
+            <label asp-for="Threshold" class="form-label">Below %</label>
+            <input asp-for="Threshold" type="number" min="1" max="100"
+                   step="0.01" class="form-control" />
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-primary w-100">Go</button>
+        </div>
+    </form>
+</section>
+
+<section class="row g-3 mb-4" aria-label="Daily attendance summary">
+    <div class="col-6 col-lg-3">
+        <div class="portal-panel h-100"><span class="text-muted">Present</span><div class="display-6">@Model.DailyPresent</div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="portal-panel h-100"><span class="text-muted">Absent</span><div class="display-6">@Model.DailyAbsent</div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="portal-panel h-100"><span class="text-muted">Late</span><div class="display-6">@Model.DailyLate</div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="portal-panel h-100"><span class="text-muted">Leave / half day</span><div class="display-6">@Model.DailyLeave</div></div>
+    </div>
+</section>
+
+<section class="portal-panel mb-4">
+    <h2 class="h4">Absent call list · @Model.ReportDate.ToString("dd MMM yyyy")</h2>
+    @if (Model.AbsentStudents.Count == 0)
+    {
+        <p class="text-muted mb-0">No absent students in the submitted daily register.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr><th>Roll</th><th>Student</th><th>Guardian</th><th>Phone</th><th>Reason</th></tr></thead>
+                <tbody>
+                    @foreach (var student in Model.AbsentStudents)
+                    {
+                        <tr>
+                            <td>@student.RollNumber</td>
+                            <td>@student.StudentName<div class="text-muted small">@student.AdmissionNumber</div></td>
+                            <td>@(student.GuardianName ?? "—")</td>
+                            <td>@(student.GuardianPhone ?? "—")</td>
+                            <td>@(student.Reason ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="portal-panel mb-4">
+    <h2 class="h4">Student attendance</h2>
+    <p class="text-muted">Late counts as present; half day counts as 0.5 day. Defaulters are below @Model.Threshold%.</p>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Roll</th><th>Student</th><th>Days</th><th>P</th><th>A</th><th>L</th><th>Half</th><th>Leave</th><th>%</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var student in Model.StudentSummaries)
+                {
+                    <tr class="@(student.IsDefaulter ? "table-warning" : string.Empty)">
+                        <td>@student.RollNumber</td>
+                        <td>@student.StudentName<div class="text-muted small">@student.AdmissionNumber</div></td>
+                        <td>@student.WorkingDays</td><td>@student.Present</td><td>@student.Absent</td>
+                        <td>@student.Late</td><td>@student.HalfDays</td><td>@student.Leave</td>
+                        <td><strong>@student.Percentage.ToString("0.00")%</strong></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="portal-panel">
+    <h2 class="h4">Class comparison</h2>
+    <div class="table-responsive">
+        <table class="table">
+            <thead><tr><th>Section</th><th>Attendance records</th><th>Weighted attendance</th></tr></thead>
+            <tbody>
+                @foreach (var item in Model.ClassSummaries)
+                {
+                    <tr><td>@item.SectionName</td><td>@item.Records</td><td>@item.Percentage.ToString("0.00")%</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

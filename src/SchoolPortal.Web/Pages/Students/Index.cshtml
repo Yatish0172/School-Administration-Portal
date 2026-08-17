@@ -1,0 +1,120 @@
+@page
+@using SchoolPortal.Domain.Students
+@model SchoolPortal.Web.Pages.Students.IndexModel
+@{
+    ViewData["Title"] = "Students";
+}
+
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Student records</p>
+        <h1>Students</h1>
+        <p>Students are never deleted; departures are recorded as status changes.</p>
+    </div>
+    @if (Model.CanCreate)
+    {
+        <a asp-page="/Students/Create" class="btn btn-primary">New admission</a>
+    }
+</div>
+
+@if (TempData["StatusMessage"] is string statusMessage)
+{
+    <div class="alert alert-success">@statusMessage</div>
+}
+
+<section class="data-panel">
+    <form method="get" class="filter-bar">
+        <div class="filter-search">
+            <label asp-for="Search" class="form-label">Search</label>
+            <input asp-for="Search" class="form-control" placeholder="Name, admission number, guardian, or phone" />
+        </div>
+        <div>
+            <label asp-for="Status" class="form-label"></label>
+            <select asp-for="Status" asp-items="Html.GetEnumSelectList<StudentStatus>()" class="form-select">
+                <option value="">All statuses</option>
+            </select>
+        </div>
+        <div>
+            <label asp-for="ClassId" class="form-label">Class</label>
+            <select asp-for="ClassId" class="form-select" id="class-filter">
+                <option value="">All classes</option>
+                @foreach (var schoolClass in Model.Classes)
+                {
+                    <option value="@schoolClass.Id">@schoolClass.Name</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label asp-for="SectionId" class="form-label">Section</label>
+            <select asp-for="SectionId" class="form-select">
+                <option value="">All sections</option>
+                @foreach (var schoolSection in Model.Sections)
+                {
+                    <option value="@schoolSection.Id" data-class="@schoolSection.ClassId">@schoolSection.Name</option>
+                }
+            </select>
+        </div>
+        <button class="btn btn-primary" type="submit">Filter</button>
+        <a asp-page="/Students/Index" class="btn btn-outline-secondary">Reset</a>
+    </form>
+
+    <div class="panel-heading panel-heading-border">
+        <div><h2>@Model.Total student@(Model.Total == 1 ? string.Empty : "s")</h2></div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Admission no.</th>
+                    <th>Student</th>
+                    <th>Class</th>
+                    <th>Guardian</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var student in Model.Rows)
+            {
+                <tr class="clickable-row">
+                    <td><a asp-page="/Students/Details" asp-route-id="@student.Id" class="record-link">@student.AdmissionNumber</a></td>
+                    <td>
+                        <a asp-page="/Students/Details" asp-route-id="@student.Id" class="fw-semibold text-decoration-none">@student.FullName</a>
+                        @if (student.RollNumber.HasValue)
+                        {
+                            <div class="table-subtext">Roll @student.RollNumber</div>
+                        }
+                    </td>
+                    <td>@(student.ClassName is null ? "—" : $"{student.ClassName} · {student.SectionName}")</td>
+                    <td>
+                        @(student.GuardianName ?? "—")
+                        @if (!string.IsNullOrWhiteSpace(student.GuardianPhone))
+                        {
+                            <div class="table-subtext">@student.GuardianPhone</div>
+                        }
+                    </td>
+                    <td><span class="status-pill status-@student.Status.ToString().ToLowerInvariant()">@student.Status</span></td>
+                </tr>
+            }
+            @if (Model.Rows.Count == 0)
+            {
+                <tr><td colspan="5" class="empty-cell">No students match the selected filters.</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="pager" aria-label="Student pages">
+            <a class="btn btn-sm btn-outline-secondary @(Model.PageNumber == 1 ? "disabled" : null)"
+               asp-route-Search="@Model.Search" asp-route-Status="@Model.Status"
+               asp-route-ClassId="@Model.ClassId" asp-route-SectionId="@Model.SectionId"
+               asp-route-PageNumber="@(Model.PageNumber - 1)">Previous</a>
+            <span>Page @Model.PageNumber of @Model.TotalPages</span>
+            <a class="btn btn-sm btn-outline-secondary @(Model.PageNumber == Model.TotalPages ? "disabled" : null)"
+               asp-route-Search="@Model.Search" asp-route-Status="@Model.Status"
+               asp-route-ClassId="@Model.ClassId" asp-route-SectionId="@Model.SectionId"
+               asp-route-PageNumber="@(Model.PageNumber + 1)">Next</a>
+        </nav>
+    }
+</section>

@@ -1,0 +1,251 @@
+@page
+@using SchoolPortal.Domain.Attendance
+@model SchoolPortal.Web.Pages.Attendance.IndexModel
+@{
+    ViewData["Title"] = "Attendance";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">Attendance</p>
+        <h1>Daily attendance register</h1>
+        <p class="text-muted mb-0">Mark the whole class quickly, then flag exceptions.</p>
+    </div>
+    <a asp-page="/Attendance/Reports" class="btn btn-outline-primary">View reports</a>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+}
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+<section class="portal-panel mb-4">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-lg-5">
+            <label asp-for="SectionId" class="form-label">Section</label>
+            <select asp-for="SectionId" class="form-select">
+                <option value="">Choose a section</option>
+                @foreach (var option in Model.Sections)
+                {
+                    <option value="@option.Id">@option.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Date" class="form-label"></label>
+            <input asp-for="Date" class="form-control" type="date" />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="PeriodNumber" class="form-label">Period</label>
+            <select asp-for="PeriodNumber" class="form-select">
+                <option value="0">Daily</option>
+                @for (var period = 1; period <= 12; period++)
+                {
+                    <option value="@period">Period @period</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Load register</button>
+        </div>
+    </form>
+</section>
+
+@if (Model.SectionId.HasValue)
+{
+    <section class="portal-panel">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h2 class="h4 mb-1">@Model.SelectedSectionName</h2>
+                <p class="text-muted mb-0">
+                    @Model.Date.ToString("dddd, dd MMMM yyyy")
+                    · @(Model.PeriodNumber == 0 ? "Daily register" : $"Period {Model.PeriodNumber}")
+                </p>
+            </div>
+            @if (Model.IsLocked)
+            {
+                <span class="badge text-bg-warning">Locked · corrections require a reason</span>
+            }
+            else
+            {
+                <span class="badge text-bg-success">Open until @Model.LockAt.ToString("dd MMM, h:mm tt")</span>
+            }
+        </div>
+
+        @if (Model.Roster.Count == 0)
+        {
+            <div class="empty-state">No active students are enrolled in this section.</div>
+        }
+        else if (!Model.IsLocked && Model.CanMark)
+        {
+            <form method="post" asp-page-handler="Save">
+                <input type="hidden" asp-for="SectionId" />
+                <input type="hidden" asp-for="Date" />
+                <input type="hidden" asp-for="PeriodNumber" />
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button type="button" class="btn btn-sm btn-outline-success" id="mark-all-present">
+                        Mark all present
+                    </button>
+                    <span class="text-muted small align-self-center">
+                        Leave requires a reason.
+                    </span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Roll</th>
+                                <th>Student</th>
+                                <th>Status</th>
+                                <th>Reason / note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var index = 0; index < Model.Roster.Count; index++)
+                            {
+                                var row = Model.Roster[index];
+                                <tr>
+                                    <td>@row.RollNumber</td>
+                                    <td>
+                                        <strong>@row.StudentName</strong>
+                                        <div class="text-muted small">@row.AdmissionNumber</div>
+                                        <input type="hidden"
+                                               asp-for="Entries[index].EnrollmentId" />
+                                    </td>
+                                    <td style="min-width: 170px">
+                                        <select asp-for="Entries[index].Status"
+                                                asp-items="Html.GetEnumSelectList<AttendanceStatus>()"
+                                                class="form-select attendance-status"></select>
+                                    </td>
+                                    <td style="min-width: 240px">
+                                        <input asp-for="Entries[index].Reason"
+                                               class="form-control"
+                                               placeholder="Required for leave" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <button type="submit" class="btn btn-primary">Save attendance</button>
+            </form>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Roll</th>
+                            <th>Student</th>
+                            <th>Status</th>
+                            <th>Reason</th>
+                            @if (Model.CanCorrect)
+                            {
+                                <th>Correction</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.Roster)
+                        {
+                            <tr>
+                                <td>@row.RollNumber</td>
+                                <td>
+                                    <strong>@row.StudentName</strong>
+                                    <div class="text-muted small">@row.AdmissionNumber</div>
+                                </td>
+                                <td><span class="badge text-bg-secondary">@row.Status</span></td>
+                                <td>@(row.Reason ?? "—")</td>
+                                @if (Model.CanCorrect)
+                                {
+                                    <td>
+                                        @if (row.EntryId.HasValue)
+                                        {
+                                            <details>
+                                                <summary class="btn btn-sm btn-outline-primary">Correct</summary>
+                                                <form method="post"
+                                                      asp-page-handler="Correct"
+                                                      class="mt-2 correction-form">
+                                                    <input type="hidden"
+                                                           name="Correction.EntryId"
+                                                           value="@row.EntryId" />
+                                                    <select name="Correction.NewStatus"
+                                                            class="form-select form-select-sm mb-2"
+                                                            asp-items="Html.GetEnumSelectList<AttendanceStatus>()">
+                                                    </select>
+                                                    <input name="Correction.EntryReason"
+                                                           class="form-control form-control-sm mb-2"
+                                                           placeholder="Updated attendance note" />
+                                                    <input name="Correction.Reason"
+                                                           class="form-control form-control-sm mb-2"
+                                                           required minlength="3"
+                                                           placeholder="Why is this correction needed?" />
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-primary">
+                                                        Save correction
+                                                    </button>
+                                                </form>
+                                            </details>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Not submitted</span>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+}
+
+@if (Model.CorrectionHistory.Count > 0)
+{
+    <section class="portal-panel mt-4">
+        <h2 class="h4">Correction history</h2>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Change</th>
+                        <th>Reason</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.CorrectionHistory)
+                    {
+                        <tr>
+                            <td>
+                                @item.StudentName
+                                <div class="text-muted small">@item.AdmissionNumber</div>
+                            </td>
+                            <td>@item.OldStatus → @item.NewStatus</td>
+                            <td>@item.Reason</td>
+                            <td>@item.CorrectedAtUtc.ToLocalTime().ToString("dd MMM yyyy, h:mm tt")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById("mark-all-present")?.addEventListener("click", () => {
+            document.querySelectorAll(".attendance-status").forEach(select => {
+                select.value = "@((int)AttendanceStatus.Present)";
+                select.dispatchEvent(new Event("change"));
+            });
+        });
+    </script>
+}

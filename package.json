@@ -1,79 +1,67 @@
 {
-  "name": "school-admin-portal",
-  "productName": "School Admin Portal",
-  "version": "0.1.0",
-  "description": "Offline on-premise school management system",
-  "main": "main.js",
-  "private": true,
-  "author": "DeepStation",
-  "license": "UNLICENSED",
-  "scripts": {
-    "start": "node build_bundle.js && electron .",
-    "dev": "node build_bundle.js && node server.js",
-    "build:css": "node build_bundle.js",
-    "watch:css": "tailwindcss -i ./css/src.css -o ./css/app.css --watch",
-    "keygen": "node tools/generate-key.js",
-    "dist": "node build_bundle.js && electron-builder --win portable"
-  },
-  "dependencies": {
-    "archiver": "^6.0.2",
-    "bcryptjs": "^2.4.3",
-    "bonjour-service": "^1.2.1",
-    "cookie-parser": "^1.4.6",
-    "exceljs": "^4.4.0",
-    "express": "^4.19.2",
-    "helmet": "^7.1.0",
-    "multer": "^2.2.0",
-    "unzipper": "^0.12.3"
-  },
-  "devDependencies": {
-    "electron": "^30.0.0",
-    "electron-builder": "^24.13.3",
-    "qrcode-generator": "^2.0.4",
-    "tailwindcss": "^3.4.4"
-  },
-  "build": {
-    "appId": "ai.deepstation.schooladminportal",
-    "productName": "School Admin Portal",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "server.js",
-      "server/**/*",
-      "index.html",
-      "css/app.css",
-      "js/**/*",
-      "fonts/**/*",
-      "assets/**/*",
-      "package.json",
-      "!Database/**",
-      "!tools/**",
-      "!license/private.key",
-      "!dist/**",
-      "!css/src.css",
-      "!**/*.md"
-    ],
-    "extraResources": [
-      {
-        "from": "license/public.key",
-        "to": "license/public.key"
-      }
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
-      ]
-    },
-    "portable": {
-      "artifactName": "SchoolAdminPortal-${version}-portable.exe"
-    }
-  }
+    "name":  "school-admin-portal",
+    "productName":  "School Admin Portal",
+    "version":  "0.1.0",
+    "description":  "Offline on-premise school management system",
+    "main":  "desktop/main.js",
+    "private":  true,
+    "author":  "DeepStation",
+    "license":  "UNLICENSED",
+    "scripts":  {
+                    "start":  "electron .",
+                    "start:legacy":  "node build_bundle.js \u0026\u0026 electron legacy-desktop",
+                    "dev":  "node build_bundle.js \u0026\u0026 node server.js",
+                    "build:css":  "node build_bundle.js",
+                    "watch:css":  "tailwindcss -i ./css/src.css -o ./css/app.css --watch",
+                    "keygen":  "node tools/generate-key.js",
+                    "dist":  "electron-builder --win portable"
+                },
+    "dependencies":  {
+                         "archiver":  "^6.0.2",
+                         "bcryptjs":  "^2.4.3",
+                         "bonjour-service":  "^1.2.1",
+                         "cookie-parser":  "^1.4.6",
+                         "exceljs":  "^4.4.0",
+                         "express":  "^4.19.2",
+                         "helmet":  "^7.1.0",
+                         "multer":  "^2.2.0",
+                         "unzipper":  "^0.12.3"
+                     },
+    "devDependencies":  {
+                            "electron":  "^30.0.0",
+                            "electron-builder":  "^24.13.3",
+                            "qrcode-generator":  "^2.0.4",
+                            "tailwindcss":  "^3.4.4"
+                        },
+    "build":  {
+                  "appId":  "ai.deepstation.schooladminportal",
+                  "productName":  "School Admin Portal",
+                  "directories":  {
+                                      "output":  "dist"
+                                  },
+                  "files":  [
+                                "desktop/**/*",
+                                "package.json"
+                            ],
+                  "extraResources":  [
+                                         {
+                                             "from":  "desktop-publish",
+                                             "to":  "web"
+                                         }
+                                     ],
+                  "win":  {
+                              "target":  [
+                                             {
+                                                 "target":  "portable",
+                                                 "arch":  [
+                                                              "x64"
+                                                          ]
+                                             }
+                                         ],
+                              "signAndEditExecutable":  false
+                          },
+                  "portable":  {
+                                   "artifactName":  "SchoolAdminPortal-${version}-portable.exe"
+                               }
+              }
 }

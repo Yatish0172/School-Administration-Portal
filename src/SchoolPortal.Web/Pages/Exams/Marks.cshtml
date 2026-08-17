@@ -1,0 +1,128 @@
+@page
+@model SchoolPortal.Web.Pages.Exams.MarksModel
+@{
+    ViewData["Title"] = "Marks entry";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">Examinations</p>
+        <h1>Marks entry</h1>
+        <p class="text-muted mb-0">Blank is not zero. Use the absent flag when a student did not sit the paper.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-page="/Exams/Index" class="btn btn-outline-primary">Exam setup</a>
+        <a asp-page="/Exams/Results" asp-route-ExaminationId="@Model.ExaminationId" asp-route-SectionId="@Model.SectionId" class="btn btn-primary">Review</a>
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success">@Model.StatusMessage</div>
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+<section class="portal-panel mb-4">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-lg-4">
+            <label asp-for="ExaminationId" class="form-label">Examination</label>
+            <select asp-for="ExaminationId" class="form-select">
+                <option value="">Choose</option>
+                @foreach (var exam in Model.Examinations)
+                {
+                    <option value="@exam.Id">@exam.Name · @exam.Status</option>
+                }
+            </select>
+        </div>
+        <div class="col-lg-3">
+            <label asp-for="ExaminationSubjectId" class="form-label">Subject</label>
+            <select asp-for="ExaminationSubjectId" class="form-select">
+                <option value="">Choose</option>
+                @foreach (var subject in Model.Subjects)
+                {
+                    <option value="@subject.Id">@subject.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-lg-3">
+            <label asp-for="SectionId" class="form-label">Section</label>
+            <select asp-for="SectionId" class="form-select">
+                <option value="">Choose</option>
+                @foreach (var option in Model.Sections)
+                {
+                    <option value="@option.Id">@option.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-lg-2"><button class="btn btn-primary w-100">Load grid</button></div>
+    </form>
+</section>
+
+@if (Model.SelectedExamination is not null && Model.SelectedSubject is not null && Model.SectionId.HasValue)
+{
+    <section class="portal-panel">
+        <div class="d-flex flex-wrap justify-content-between gap-3 mb-3">
+            <div>
+                <h2 class="h4 mb-1">@Model.SelectedExamination.Name · @Model.SelectedSubject.Subject.Name</h2>
+                <p class="text-muted mb-0">Maximum @Model.SelectedSubject.MaximumMarks · Pass @Model.SelectedSubject.PassMarks</p>
+            </div>
+            @if (Model.LockReason is not null)
+            {
+                <span class="badge text-bg-warning align-self-start">@Model.LockReason</span>
+            }
+            else
+            {
+                <span class="badge text-bg-success align-self-start">Entry window open</span>
+            }
+        </div>
+
+        @if (Model.Roster.Count == 0)
+        {
+            <p class="text-muted mb-0">No active students are enrolled in this section.</p>
+        }
+        else
+        {
+            <form method="post" asp-page-handler="Save">
+                <input type="hidden" asp-for="ExaminationId" />
+                <input type="hidden" asp-for="ExaminationSubjectId" />
+                <input type="hidden" asp-for="SectionId" />
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead><tr><th>Roll</th><th>Student</th><th>Marks</th><th>Absent</th><th>Grade</th><th>Remarks</th></tr></thead>
+                        <tbody>
+                            @for (var index = 0; index < Model.Roster.Count; index++)
+                            {
+                                var row = Model.Roster[index];
+                                <tr>
+                                    <td>@row.RollNumber</td>
+                                    <td><strong>@row.StudentName</strong><div class="text-muted small">@row.AdmissionNumber</div><input type="hidden" asp-for="Entries[index].EnrollmentId" /></td>
+                                    <td style="width: 9rem"><input asp-for="Entries[index].MarksObtained" type="number" min="0" max="@Model.SelectedSubject.MaximumMarks" step="0.01" class="form-control mark-input" disabled="@(!Model.CanEnter || row.IsAbsent)" /></td>
+                                    <td><input asp-for="Entries[index].IsAbsent" class="form-check-input absent-input" disabled="@(!Model.CanEnter)" /></td>
+                                    <td>@(row.Grade ?? "—")</td>
+                                    <td style="min-width: 220px"><input asp-for="Entries[index].Remarks" class="form-control" disabled="@(!Model.CanEnter)" /></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (Model.CanEnter)
+                {
+                    <button class="btn btn-primary" type="submit">Save marks</button>
+                }
+            </form>
+        }
+    </section>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.querySelectorAll(".absent-input").forEach((checkbox, index) => {
+            checkbox.addEventListener("change", () => {
+                const input = document.querySelectorAll(".mark-input")[index];
+                input.disabled = checkbox.checked;
+                if (checkbox.checked) input.value = "";
+            });
+        });
+    </script>
+}

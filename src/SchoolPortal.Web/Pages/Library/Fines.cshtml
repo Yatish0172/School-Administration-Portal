@@ -1,0 +1,80 @@
+@page
+@model SchoolPortal.Web.Pages.Library.FinesModel
+@{
+    ViewData["Title"] = "Library fines";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">Library</p>
+        <h1>Fines</h1>
+        <p>Review overdue fines and preserve paid or waived settlement history.</p>
+    </div>
+    <div class="record-actions">
+        @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Library.View))
+        {
+            <a asp-page="/Library/Circulation" class="btn btn-primary">Circulation desk</a>
+            <a asp-page="/Library/Reports" class="btn btn-outline-primary">Reports</a>
+        }
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-info">@Model.StatusMessage</div>
+}
+<div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+<section class="dashboard-hero mb-3">
+    <div><p class="eyebrow">Filtered fines</p><h1>@Model.Fines.Count record(s)</h1></div>
+    <div class="text-end"><div class="text-muted small">Pending in this view</div><div class="display-6 fw-bold">@Model.PendingTotal.ToString("N2")</div></div>
+</section>
+
+<section class="data-panel">
+    <form method="get" class="filter-bar">
+        <div>
+            <label asp-for="Status" class="form-label"></label>
+            <select asp-for="Status" class="form-select">
+                <option value="">All statuses</option>
+                @foreach (var status in Enum.GetValues<SchoolPortal.Domain.Library.LibraryFineStatus>()) { <option value="@status">@status</option> }
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Student</th><th>Book</th><th>Reason</th><th>Amount</th><th>Status</th><th>Settlement</th></tr></thead>
+            <tbody>
+            @if (Model.Fines.Count == 0)
+            {
+                <tr><td colspan="6" class="empty-cell">No fines match this filter.</td></tr>
+            }
+            else
+            {
+                @foreach (var fine in Model.Fines)
+                {
+                    <tr>
+                        <td>@fine.Student.FullName<div class="table-subtext">@fine.Student.AdmissionNumber</div></td>
+                        <td>@fine.BookIssue.LibraryCopy.LibraryTitle.Title<div class="table-subtext">@fine.BookIssue.LibraryCopy.AccessionNumber</div></td>
+                        <td>@fine.Reason</td><td><strong>@fine.Amount.ToString("N2")</strong></td>
+                        <td><span class="status-pill @(fine.Status == SchoolPortal.Domain.Library.LibraryFineStatus.Pending ? "status-left" : "status-active")">@fine.Status</span></td>
+                        <td>
+                            @if (Model.CanSettle && fine.Status == SchoolPortal.Domain.Library.LibraryFineStatus.Pending)
+                            {
+                                <div class="d-grid gap-2">
+                                    <form method="post" asp-page-handler="Settle"><input type="hidden" name="fineId" value="@fine.Id" /><input type="hidden" name="waive" value="false" /><button type="submit" class="btn btn-sm btn-primary">Mark paid</button></form>
+                                    <form method="post" asp-page-handler="Settle" class="d-flex gap-2"><input type="hidden" name="fineId" value="@fine.Id" /><input type="hidden" name="waive" value="true" /><input asp-for="SettlementReason" class="form-control form-control-sm" minlength="3" required placeholder="Waiver reason" /><button type="submit" class="btn btn-sm btn-outline-danger">Waive</button></form>
+                                </div>
+                            }
+                            else
+                            {
+                                <span>@fine.SettledAtUtc?.ToLocalTime().ToString("dd MMM yyyy")</span><div class="table-subtext">@fine.SettlementReason</div>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>

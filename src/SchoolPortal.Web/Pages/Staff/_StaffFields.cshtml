@@ -1,0 +1,34 @@
+@model SchoolPortal.Web.Pages.Staff.IndexModel
+@{
+    var prefix = (string)ViewData["Prefix"]!;
+    var editing = (bool)ViewData["Editing"]!;
+}
+<div class="row g-3 staff-form" data-prefix="@prefix">
+    @if (editing)
+    {
+        <input asp-for="EditStaff.Id" type="hidden" data-field="Id" />
+        <input asp-for="EditStaff.Version" type="hidden" data-field="Version" />
+    }
+    <div class="col-md-4"><label class="form-label">Staff number</label><input name="@(prefix + ".StaffNumber")" class="form-control" data-field="StaffNumber" /></div>
+    <div class="col-md-4"><label class="form-label">First name</label><input name="@(prefix + ".FirstName")" class="form-control" data-field="FirstName" /></div>
+    <div class="col-md-4"><label class="form-label">Middle name</label><input name="@(prefix + ".MiddleName")" class="form-control" data-field="MiddleName" /></div>
+    <div class="col-md-4"><label class="form-label">Last name</label><input name="@(prefix + ".LastName")" class="form-control" data-field="LastName" /></div>
+    <div class="col-md-4"><label class="form-label">Designation</label><input name="@(prefix + ".Designation")" class="form-control" data-field="Designation" /></div>
+    <div class="col-md-4"><label class="form-label">Department</label><input name="@(prefix + ".Department")" class="form-control" data-field="Department" /></div>
+    <div class="col-md-4"><label class="form-label">Employment type</label><input name="@(prefix + ".EmploymentType")" class="form-control" data-field="EmploymentType" /></div>
+    <div class="col-md-4"><label class="form-label">Date of joining</label><input name="@(prefix + ".DateOfJoining")" class="form-control" type="date" data-field="DateOfJoining" /></div>
+    <div class="col-md-4"><label class="form-label">Phone</label><input name="@(prefix + ".Phone")" class="form-control" data-field="Phone" /></div>
+    <div class="col-md-4"><label class="form-label">Alternate phone</label><input name="@(prefix + ".AlternatePhone")" class="form-control" data-field="AlternatePhone" /></div>
+    <div class="col-md-4"><label class="form-label">Email</label><input name="@(prefix + ".Email")" class="form-control" type="email" data-field="Email" /></div>
+    <input name="@(prefix + ".PortalUserId")" type="hidden" data-field="PortalUserId" />
+    <div class="col-12"><label class="form-label">Address</label><textarea name="@(prefix + ".Address")" class="form-control" rows="2" data-field="Address"></textarea></div>
+    <div class="col-md-4"><label class="form-label">City</label><input name="@(prefix + ".City")" class="form-control" data-field="City" /></div>
+    <div class="col-md-4"><label class="form-label">State</label><input name="@(prefix + ".State")" class="form-control" data-field="State" /></div>
+    <div class="col-md-4"><label class="form-label">Postal code</label><input name="@(prefix + ".PostalCode")" class="form-control" data-field="PostalCode" /></div>
+    <div class="col-md-6"><label class="form-label">Emergency contact</label><input name="@(prefix + ".EmergencyContactName")" class="form-control" data-field="EmergencyContactName" /></div>
+    <div class="col-md-6"><label class="form-label">Emergency phone</label><input name="@(prefix + ".EmergencyContactPhone")" class="form-control" data-field="EmergencyContactPhone" /></div>
+    @if (editing)
+    {
+        <div class="col-12 form-check ms-2"><input name="EditStaff.IsActive" value="true" class="form-check-input" type="checkbox" data-field="IsActive" /><input name="EditStaff.IsActive" value="false" type="hidden" /><label class="form-check-label">Active staff member</label></div>
+    }
+</div>

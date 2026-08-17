@@ -1,0 +1,179 @@
+@page
+@model SchoolPortal.Web.Pages.Library.IndexModel
+@{
+    ViewData["Title"] = "Library catalogue";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">Library</p>
+        <h1>Catalogue and copies</h1>
+        <p>Manage titles, reference data, accessioned physical copies, and circulation policy.</p>
+    </div>
+    <div class="record-actions">
+        <a asp-page="/Library/Circulation" class="btn btn-primary">Circulation desk</a>
+        <a asp-page="/Library/Reports" class="btn btn-outline-primary">Reports</a>
+        @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Library.ViewFines))
+        {
+            <a asp-page="/Library/Fines" class="btn btn-outline-primary">Fines</a>
+        }
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-info">@Model.StatusMessage</div>
+}
+<div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+<section class="data-panel mb-3">
+    <form method="get" class="filter-bar">
+        <div class="filter-search">
+            <label asp-for="Search" class="form-label">Search catalogue</label>
+            <input asp-for="Search" class="form-control" placeholder="Title, author, ISBN, or shelf" />
+        </div>
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a asp-page="/Library/Index" class="btn btn-outline-secondary">Clear</a>
+    </form>
+</section>
+
+<section class="data-panel mb-3">
+    <div class="panel-heading"><div><h2>Catalogue</h2><p>@Model.Titles.Count matching title(s).</p></div></div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Title</th><th>Author</th><th>Category</th><th>ISBN / class</th><th>Copies</th><th>Available</th><th></th></tr></thead>
+            <tbody>
+            @if (Model.Titles.Count == 0)
+            {
+                <tr><td colspan="7" class="empty-cell">No catalogue titles found.</td></tr>
+            }
+            else
+            {
+                @foreach (var title in Model.Titles)
+                {
+                    <tr>
+                        <td><strong>@title.Title</strong><div class="table-subtext">@title.Edition · @title.PublicationYear · @title.ShelfLocation</div></td>
+                        <td>@title.Author.Name</td><td>@title.Category.Name</td>
+                        <td>@title.Isbn<div class="table-subtext">@title.ClassificationNumber</div></td>
+                        <td>@title.Copies.Count</td>
+                        <td>@title.Copies.Count(x => x.Status == SchoolPortal.Domain.Library.LibraryCopyStatus.Available)</td>
+                        <td class="text-end"><a asp-page="/Library/Index" asp-route-SelectedTitleId="@title.Id" class="btn btn-sm btn-outline-primary">Copies</a></td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@if (Model.CanManage)
+{
+    <section class="data-panel mb-3">
+        <div class="panel-heading"><div><h2>Add catalogue reference</h2><p>Create an author, category, or publisher before adding its title.</p></div></div>
+        <form method="post" asp-page-handler="CreateReference" class="form-grid form-grid-4">
+            <div>
+                <label for="referenceType" class="form-label">Type</label>
+                <select id="referenceType" name="referenceType" class="form-select">
+                    <option value="author">Author</option><option value="category">Category</option><option value="publisher">Publisher</option>
+                </select>
+            </div>
+            <div class="form-span-2"><label asp-for="ReferenceName" class="form-label">Name</label><input asp-for="ReferenceName" class="form-control" /></div>
+            <div class="d-flex align-items-end justify-content-end"><button type="submit" class="btn btn-outline-primary">Add reference</button></div>
+        </form>
+    </section>
+
+    <section class="data-panel mb-3">
+        <div class="panel-heading"><div><h2>Add title</h2><p>Catalogue metadata is shared by every physical copy.</p></div></div>
+        <form method="post" asp-page-handler="CreateTitle" class="form-grid form-grid-4">
+            <div class="form-span-2"><label asp-for="NewTitle.Title" class="form-label"></label><input asp-for="NewTitle.Title" class="form-control" /></div>
+            <div>
+                <label asp-for="NewTitle.AuthorId" class="form-label">Author</label>
+                <select asp-for="NewTitle.AuthorId" class="form-select"><option value="">Choose author</option>@foreach (var item in Model.Authors) { <option value="@item.Id">@item.Name</option> }</select>
+            </div>
+            <div>
+                <label asp-for="NewTitle.CategoryId" class="form-label">Category</label>
+                <select asp-for="NewTitle.CategoryId" class="form-select"><option value="">Choose category</option>@foreach (var item in Model.Categories) { <option value="@item.Id">@item.Name</option> }</select>
+            </div>
+            <div>
+                <label asp-for="NewTitle.PublisherId" class="form-label">Publisher</label>
+                <select asp-for="NewTitle.PublisherId" class="form-select"><option value="">No publisher</option>@foreach (var item in Model.Publishers) { <option value="@item.Id">@item.Name</option> }</select>
+            </div>
+            <div><label asp-for="NewTitle.Isbn" class="form-label">ISBN</label><input asp-for="NewTitle.Isbn" class="form-control" /></div>
+            <div><label asp-for="NewTitle.ClassificationNumber" class="form-label">Classification</label><input asp-for="NewTitle.ClassificationNumber" class="form-control" /></div>
+            <div><label asp-for="NewTitle.ShelfLocation" class="form-label">Shelf</label><input asp-for="NewTitle.ShelfLocation" class="form-control" /></div>
+            <div><label asp-for="NewTitle.Edition" class="form-label"></label><input asp-for="NewTitle.Edition" class="form-control" /></div>
+            <div><label asp-for="NewTitle.PublicationYear" class="form-label">Publication year</label><input asp-for="NewTitle.PublicationYear" class="form-control" type="number" /></div>
+            <div><label asp-for="NewTitle.Language" class="form-label"></label><input asp-for="NewTitle.Language" class="form-control" /></div>
+            <div class="form-span-2"><label asp-for="NewTitle.Description" class="form-label"></label><input asp-for="NewTitle.Description" class="form-control" /></div>
+            <div><button type="submit" class="btn btn-primary">Create title</button></div>
+        </form>
+    </section>
+}
+
+@if (Model.SelectedTitle is not null)
+{
+    <section class="data-panel mb-3">
+        <div class="panel-heading"><div><h2>@Model.SelectedTitle.Title - physical copies</h2><p>@Model.SelectedTitle.Author.Name · @Model.SelectedTitle.ShelfLocation</p></div></div>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr><th>Accession</th><th>Purchase date</th><th>Price</th><th>Condition</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                @if (Model.SelectedTitle.Copies.Count == 0)
+                {
+                    <tr><td colspan="6" class="empty-cell">No physical copies added.</td></tr>
+                }
+                else
+                {
+                    @foreach (var copy in Model.SelectedTitle.Copies.OrderBy(x => x.AccessionNumber))
+                    {
+                        <tr>
+                            <td><strong>@copy.AccessionNumber</strong></td><td>@copy.PurchaseDate?.ToString("dd MMM yyyy")</td><td>@copy.Price?.ToString("N2")</td><td>@copy.Condition</td>
+                            <td><span class="status-pill @(copy.Status == SchoolPortal.Domain.Library.LibraryCopyStatus.Available ? "status-active" : "")">@copy.Status</span></td>
+                            <td>
+                                @if (Model.CanManage && copy.Status != SchoolPortal.Domain.Library.LibraryCopyStatus.Issued)
+                                {
+                                    <form method="post" asp-page-handler="SetCopyStatus" class="d-flex gap-2">
+                                        <input type="hidden" name="copyId" value="@copy.Id" />
+                                        <select name="status" class="form-select form-select-sm">
+                                            @foreach (var status in Enum.GetValues<SchoolPortal.Domain.Library.LibraryCopyStatus>().Where(x => x != SchoolPortal.Domain.Library.LibraryCopyStatus.Issued))
+                                            {
+                                                <option value="@status" selected="@(status == copy.Status)">@status</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.CanManage)
+        {
+            <form method="post" asp-page-handler="AddCopies" class="form-grid form-grid-4 panel-heading-border pt-3">
+                <input asp-for="NewCopies.LibraryTitleId" type="hidden" value="@Model.SelectedTitle.Id" />
+                <div><label asp-for="NewCopies.Quantity" class="form-label"></label><input asp-for="NewCopies.Quantity" class="form-control" type="number" min="1" max="200" /></div>
+                <div><label asp-for="NewCopies.PurchaseDate" class="form-label">Purchase date</label><input asp-for="NewCopies.PurchaseDate" class="form-control" type="date" /></div>
+                <div><label asp-for="NewCopies.Price" class="form-label">Price per copy</label><input asp-for="NewCopies.Price" class="form-control" type="number" min="0" step="0.01" /></div>
+                <div><label asp-for="NewCopies.Condition" class="form-label"></label><select asp-for="NewCopies.Condition" asp-items="Html.GetEnumSelectList<SchoolPortal.Domain.Library.LibraryCopyCondition>()" class="form-select"></select></div>
+                <div><button type="submit" class="btn btn-primary">Generate accessioned copies</button></div>
+            </form>
+        }
+    </section>
+}
+
+@if (Model.CanManage)
+{
+    <section class="data-panel">
+        <div class="panel-heading"><div><h2>Circulation policy</h2><p>These limits and fine rules are enforced inside every circulation transaction.</p></div></div>
+        <form method="post" asp-page-handler="UpdatePolicy" class="form-grid form-grid-4">
+            <div><label asp-for="Policy.LoanDays" class="form-label">Loan days</label><input asp-for="Policy.LoanDays" class="form-control" type="number" /></div>
+            <div><label asp-for="Policy.MaximumBooksPerStudent" class="form-label">Books per student</label><input asp-for="Policy.MaximumBooksPerStudent" class="form-control" type="number" /></div>
+            <div><label asp-for="Policy.MaximumRenewals" class="form-label">Maximum renewals</label><input asp-for="Policy.MaximumRenewals" class="form-control" type="number" /></div>
+            <div><label asp-for="Policy.FinePerOverdueDay" class="form-label">Fine per overdue day</label><input asp-for="Policy.FinePerOverdueDay" class="form-control" type="number" min="0" step="0.01" /></div>
+            <div><button type="submit" class="btn btn-outline-primary">Save policy</button></div>
+        </form>
+    </section>
+}

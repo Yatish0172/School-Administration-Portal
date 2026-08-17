@@ -1,0 +1,86 @@
+@page
+@model SchoolPortal.Web.Pages.Fees.ReportsModel
+@{
+    ViewData["Title"] = "Fee reports";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">Fees and collections</p>
+        <h1>Collection and dues reports</h1>
+        <p>Daily or date-range collections, reversals, outstanding balances, and ageing.</p>
+    </div>
+    <div class="record-actions">
+        <a asp-page="/Fees/Ledger" class="btn btn-primary">Student ledger</a>
+        <a asp-page="/Fees/Index" class="btn btn-outline-primary">Fee setup</a>
+    </div>
+</section>
+
+<section class="data-panel mb-3">
+    <form method="get" class="filter-bar">
+        <div><label asp-for="From" class="form-label"></label><input asp-for="From" class="form-control" type="date" /></div>
+        <div><label asp-for="To" class="form-label"></label><input asp-for="To" class="form-control" type="date" /></div>
+        <button type="submit" class="btn btn-primary">Run report</button>
+    </form>
+</section>
+
+<section class="module-grid" aria-label="Financial report totals">
+    <article class="module-card"><div class="module-card-heading"><h2>Collected</h2></div><p class="display-6">@Model.CollectedTotal.ToString("N2")</p></article>
+    <article class="module-card"><div class="module-card-heading"><h2>Reversed</h2></div><p class="display-6">@Model.ReversedTotal.ToString("N2")</p></article>
+    <article class="module-card"><div class="module-card-heading"><h2>Outstanding</h2></div><p class="display-6">@Model.OutstandingTotal.ToString("N2")</p></article>
+</section>
+
+<section class="data-panel mb-3">
+    <div class="panel-heading"><div><h2>Collection day book</h2><p>@Model.From?.ToString("dd MMM yyyy") to @Model.To?.ToString("dd MMM yyyy"), including reversal visibility.</p></div></div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Receipt</th><th>Date</th><th>Student</th><th>Mode</th><th>Reference</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+            @if (Model.Collections.Count == 0)
+            {
+                <tr><td colspan="7" class="empty-cell">No transactions in this date range.</td></tr>
+            }
+            else
+            {
+                @foreach (var row in Model.Collections)
+                {
+                    <tr>
+                        <td><a asp-page="/Fees/Receipt" asp-route-number="@row.ReceiptNumber" class="record-link">@row.ReceiptNumber</a></td>
+                        <td>@row.Date.ToString("dd MMM yyyy")</td>
+                        <td>@row.StudentName<div class="table-subtext">@row.AdmissionNumber</div></td>
+                        <td>@row.Mode</td><td>@row.Reference</td><td>@row.Amount.ToString("N2")</td>
+                        <td><span class="status-pill @(row.Status == SchoolPortal.Domain.Fees.FeePaymentStatus.Posted ? "status-active" : "status-left")">@row.Status</span></td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="data-panel">
+    <div class="panel-heading"><div><h2>Pending dues and ageing</h2><p>Outstanding charges grouped by student and days past due.</p></div></div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Student</th><th>Class</th><th>Current / 0–30</th><th>31–60</th><th>61–90</th><th>90+</th><th>Total</th></tr></thead>
+            <tbody>
+            @if (Model.Dues.Count == 0)
+            {
+                <tr><td colspan="7" class="empty-cell">No outstanding dues.</td></tr>
+            }
+            else
+            {
+                @foreach (var row in Model.Dues)
+                {
+                    <tr>
+                        <td><a asp-page="/Fees/Ledger" asp-route-EnrollmentId="@row.EnrollmentId" class="record-link">@row.StudentName</a><div class="table-subtext">@row.AdmissionNumber</div></td>
+                        <td>@row.ClassSection</td>
+                        <td>@row.Days0To30.ToString("N2")</td><td>@row.Days31To60.ToString("N2")</td><td>@row.Days61To90.ToString("N2")</td><td>@row.DaysOver90.ToString("N2")</td>
+                        <td><strong>@row.Outstanding.ToString("N2")</strong></td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>

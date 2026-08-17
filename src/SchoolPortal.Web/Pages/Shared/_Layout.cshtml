@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - School Administration Portal</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/SchoolPortal.Web.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm portal-navbar">
+            <div class="container">
+                <a class="navbar-brand" asp-page="/Index">
+                    <span class="brand-mark">SP</span>
+                    <span>School Administration Portal</span>
+                </a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-end">
+                        <ul class="navbar-nav align-items-sm-center gap-sm-2">
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Index">Dashboard</a>
+                            </li>
+                            @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Students.View))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-page="/Students/Index">Students</a>
+                                </li>
+                            }
+                            @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Academics.Manage))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-page="/Academics/Index">Academics</a>
+                                </li>
+                            }
+                            @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Administration.ManageUsers))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-page="/Staff/Index">Staff</a>
+                                </li>
+                            }                            @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Attendance.View))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-page="/Attendance/Index">Attendance</a>
+                                </li>
+                            }
+                            @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Exams.View))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-page="/Exams/Index">Exams</a>
+                                </li>
+                            }
+                            @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Fees.View))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-page="/Fees/Ledger">Fees</a>
+                                </li>
+                            }
+                            @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Library.View))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-page="/Library/Circulation">Library</a>
+                                </li>
+                            }
+                            else if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Library.ViewFines))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-page="/Library/Fines">Library fines</a>
+                                </li>
+                            }
+                            @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Reports.View))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-page="/Reports/Index">Reports</a>
+                                </li>
+                            }
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Account/ChangePassword">Security</a>
+                            </li>
+                            <li class="nav-item">
+                                <form method="post" asp-page="/Account/Logout">
+                                    <button type="submit" class="btn btn-sm btn-outline-light">Sign out</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                }
+            </div>
+        </nav>
+    </header>
+    <div class="container portal-content">
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="portal-footer">
+        <div class="container">
+            <span>&copy; 2026 School Administration Portal</span>
+            <span>Secure local PostgreSQL application</span>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

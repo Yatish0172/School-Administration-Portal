@@ -1,0 +1,220 @@
+@page
+@model SchoolPortal.Web.Pages.Students.CreateModel
+@{
+    ViewData["Title"] = "New admission";
+}
+
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Students</p>
+        <h1>New admission</h1>
+        <p>The student, guardians, and first enrolment are committed together.</p>
+    </div>
+    <a asp-page="/Students/Index" class="btn btn-outline-secondary">Back to students</a>
+</div>
+
+<form method="post" class="record-form">
+    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+    <section class="data-panel">
+        <div class="panel-heading"><div><h2>Student profile</h2><p>Leave admission number blank to generate it automatically.</p></div></div>
+        <div class="form-grid">
+            <div>
+                <label asp-for="Input.AdmissionNumber" class="form-label"></label>
+                <input asp-for="Input.AdmissionNumber" class="form-control" />
+            </div>
+            <div>
+                <label asp-for="Input.AdmissionDate" class="form-label"></label>
+                <input asp-for="Input.AdmissionDate" class="form-control" />
+            </div>
+            <div>
+                <label asp-for="Input.FirstName" class="form-label"></label>
+                <input asp-for="Input.FirstName" class="form-control" autofocus />
+            </div>
+            <div>
+                <label asp-for="Input.MiddleName" class="form-label"></label>
+                <input asp-for="Input.MiddleName" class="form-control" />
+            </div>
+            <div>
+                <label asp-for="Input.LastName" class="form-label"></label>
+                <input asp-for="Input.LastName" class="form-control" />
+            </div>
+            <div>
+                <label asp-for="Input.DateOfBirth" class="form-label"></label>
+                <input asp-for="Input.DateOfBirth" class="form-control" />
+            </div>
+            <div>
+                <label asp-for="Input.Gender" class="form-label"></label>
+                <select asp-for="Input.Gender" class="form-select">
+                    <option value="">Not specified</option>
+                    <option>Male</option><option>Female</option><option>Other</option>
+                </select>
+            </div>
+            <div>
+                <label asp-for="Input.BloodGroup" class="form-label"></label>
+                <select asp-for="Input.BloodGroup" class="form-select">
+                    <option value="">Not specified</option>
+                    @foreach (var group in new[] { "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-" })
+                    {
+                        <option>@group</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label asp-for="Input.Category" class="form-label"></label>
+                <input asp-for="Input.Category" class="form-control" />
+            </div>
+            <div>
+                <label asp-for="Input.Nationality" class="form-label"></label>
+                <input asp-for="Input.Nationality" class="form-control" />
+            </div>
+            <div>
+                <label asp-for="Input.AadhaarNumber" class="form-label"></label>
+                <input asp-for="Input.AadhaarNumber" class="form-control" inputmode="numeric" maxlength="12" />
+            </div>
+            <div>
+                <label asp-for="Input.PreviousSchool" class="form-label"></label>
+                <input asp-for="Input.PreviousSchool" class="form-control" />
+            </div>
+            <div class="form-span-2">
+                <label asp-for="Input.PermanentAddress" class="form-label"></label>
+                <textarea asp-for="Input.PermanentAddress" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="form-span-2">
+                <label asp-for="Input.CorrespondenceAddress" class="form-label"></label>
+                <textarea asp-for="Input.CorrespondenceAddress" class="form-control" rows="2"></textarea>
+            </div>
+            <div>
+                <label asp-for="Input.City" class="form-label"></label>
+                <input asp-for="Input.City" class="form-control" />
+            </div>
+            <div>
+                <label asp-for="Input.State" class="form-label"></label>
+                <input asp-for="Input.State" class="form-control" />
+            </div>
+            <div>
+                <label asp-for="Input.PinCode" class="form-label"></label>
+                <input asp-for="Input.PinCode" class="form-control" inputmode="numeric" maxlength="6" />
+            </div>
+            <div class="form-span-2">
+                <label asp-for="Input.Remarks" class="form-label"></label>
+                <textarea asp-for="Input.Remarks" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+    </section>
+
+    <section class="data-panel">
+        <div class="panel-heading"><div><h2>Guardians</h2><p>Add at least one reachable guardian and select one primary contact.</p></div></div>
+        <div class="guardian-grid">
+            @for (var index = 0; index < Model.Guardians.Count; index++)
+            {
+                <fieldset class="guardian-card">
+                    <legend>Guardian @(index + 1)</legend>
+                    <div class="form-grid">
+                        <div>
+                            <label asp-for="Guardians[index].Relation" class="form-label"></label>
+                            <select asp-for="Guardians[index].Relation" class="form-select">
+                                <option>Father</option><option>Mother</option><option>Local guardian</option><option>Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label asp-for="Guardians[index].Name" class="form-label"></label>
+                            <input asp-for="Guardians[index].Name" class="form-control" />
+                        </div>
+                        <div>
+                            <label asp-for="Guardians[index].Phone" class="form-label"></label>
+                            <input asp-for="Guardians[index].Phone" class="form-control" type="tel" />
+                        </div>
+                        <div>
+                            <label asp-for="Guardians[index].Email" class="form-label"></label>
+                            <input asp-for="Guardians[index].Email" class="form-control" />
+                        </div>
+                        <div>
+                            <label asp-for="Guardians[index].Occupation" class="form-label"></label>
+                            <input asp-for="Guardians[index].Occupation" class="form-control" />
+                        </div>
+                        <div>
+                            <label asp-for="Guardians[index].AnnualIncome" class="form-label"></label>
+                            <input asp-for="Guardians[index].AnnualIncome" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-check mt-3">
+                        <input asp-for="Guardians[index].IsPrimary" class="form-check-input" />
+                        <label asp-for="Guardians[index].IsPrimary" class="form-check-label"></label>
+                    </div>
+                </fieldset>
+            }
+        </div>
+    </section>
+
+    <section class="data-panel">
+        <div class="panel-heading"><div><h2>First enrolment</h2><p>Roll number is allocated automatically when left blank.</p></div></div>
+        <div class="form-grid form-grid-4">
+            <div>
+                <label asp-for="Enrollment.AcademicYearId" class="form-label"></label>
+                <select asp-for="Enrollment.AcademicYearId" class="form-select" id="academic-year">
+                    @foreach (var year in Model.AcademicYears)
+                    {
+                        <option value="@year.Id">@year.Name</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label asp-for="Enrollment.ClassId" class="form-label"></label>
+                <select asp-for="Enrollment.ClassId" class="form-select" id="class-id">
+                    <option value="">Choose class</option>
+                    @foreach (var schoolClass in Model.Classes)
+                    {
+                        <option value="@schoolClass.Id">@schoolClass.Name</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label asp-for="Enrollment.SectionId" class="form-label"></label>
+                <select asp-for="Enrollment.SectionId" class="form-select" id="section-id">
+                    <option value="">Choose section</option>
+                    @foreach (var schoolSection in Model.Sections)
+                    {
+                        <option value="@schoolSection.Id"
+                                data-year="@schoolSection.AcademicYearId"
+                                data-class="@schoolSection.ClassId">
+                            @schoolSection.Name
+                        </option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label asp-for="Enrollment.RollNumber" class="form-label"></label>
+                <input asp-for="Enrollment.RollNumber" class="form-control" />
+            </div>
+        </div>
+    </section>
+
+    <div class="record-actions">
+        <a asp-page="/Students/Index" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">Admit student</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const year = document.getElementById('academic-year');
+            const schoolClass = document.getElementById('class-id');
+            const section = document.getElementById('section-id');
+            const filterSections = () => {
+                for (const option of section.options) {
+                    if (!option.value) continue;
+                    option.hidden = option.dataset.year !== year.value
+                        || option.dataset.class !== schoolClass.value;
+                }
+                const selected = section.selectedOptions[0];
+                if (selected?.hidden) section.value = '';
+            };
+            year.addEventListener('change', filterSections);
+            schoolClass.addEventListener('change', filterSections);
+            filterSections();
+        })();
+    </script>
+}

@@ -1,0 +1,5 @@
+{
+  "name": "school-admin-portal-legacy-desktop",
+  "private": true,
+  "main": "../main.js"
+}

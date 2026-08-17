@@ -1,0 +1,176 @@
+@page
+@using SchoolPortal.Domain.Examinations
+@model SchoolPortal.Web.Pages.Exams.IndexModel
+@{
+    ViewData["Title"] = "Examinations";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">Examinations</p>
+        <h1>Exam setup and grading</h1>
+        <p class="text-muted mb-0">Configure the date sheet and controlled marks-entry lifecycle.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-page="/Exams/Marks" class="btn btn-outline-primary">Enter marks</a>
+        <a asp-page="/Exams/Results" class="btn btn-primary">Review results</a>
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success">@Model.StatusMessage</div>
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <section class="portal-panel mb-4">
+            <h2 class="h4">Examinations</h2>
+            @if (Model.Examinations.Count == 0)
+            {
+                <p class="text-muted mb-0">No examinations configured yet.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead><tr><th>Exam</th><th>Class</th><th>Dates</th><th>Status</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var exam in Model.Examinations)
+                            {
+                                <tr class="@(exam.Id == Model.SelectedExamId ? "table-active" : string.Empty)">
+                                    <td><strong>@exam.Name</strong><div class="text-muted small">@exam.Term · @exam.AcademicYear.Name</div></td>
+                                    <td>@exam.Class.Name</td>
+                                    <td>@(exam.StartDate?.ToString("dd MMM") ?? "—") – @(exam.EndDate?.ToString("dd MMM") ?? "—")</td>
+                                    <td><span class="badge text-bg-secondary">@exam.Status</span></td>
+                                    <td><a asp-page="/Exams/Index" asp-route-SelectedExamId="@exam.Id" class="btn btn-sm btn-outline-primary">Open</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        @if (Model.SelectedExam is not null)
+        {
+            var selected = Model.SelectedExam;
+            <section class="portal-panel mb-4">
+                <div class="d-flex justify-content-between gap-3">
+                    <div>
+                        <h2 class="h4 mb-1">@selected.Name · @selected.Class.Name</h2>
+                        <p class="text-muted">@selected.AcademicYear.Name · @selected.Term</p>
+                    </div>
+                    <span class="badge text-bg-@(selected.Status == ExaminationStatus.Published ? "success" : selected.Status == ExaminationStatus.MarksEntry ? "warning" : "secondary") align-self-start">@selected.Status</span>
+                </div>
+                <h3 class="h5">Date sheet</h3>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead><tr><th>Subject</th><th>Maximum</th><th>Pass</th><th>Date</th><th>Time</th></tr></thead>
+                        <tbody>
+                            @foreach (var subject in selected.Subjects.OrderBy(x => x.ExaminationDate).ThenBy(x => x.Subject.Name))
+                            {
+                                <tr>
+                                    <td>@subject.Subject.Name</td>
+                                    <td>@subject.MaximumMarks</td>
+                                    <td>@subject.PassMarks</td>
+                                    <td>@(subject.ExaminationDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                                    <td>@(subject.StartsAt?.ToString("HH:mm") ?? "—") – @(subject.EndsAt?.ToString("HH:mm") ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (Model.CanConfigure && selected.Status == ExaminationStatus.Setup)
+                {
+                    <form method="post" asp-page-handler="OpenMarks" class="mt-3">
+                        <input type="hidden" name="id" value="@selected.Id" />
+                        <button class="btn btn-primary" type="submit">Open marks entry</button>
+                    </form>
+                }
+            </section>
+
+            <section class="portal-panel">
+                <h2 class="h4">Grade bands</h2>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead><tr><th>Grade</th><th>Range</th><th>Points</th><th>Description</th></tr></thead>
+                        <tbody>
+                            @foreach (var rule in Model.GradeRules)
+                            {
+                                <tr><td><strong>@rule.Grade</strong></td><td>@rule.MinimumPercent% – @rule.MaximumPercent%</td><td>@(rule.Points?.ToString() ?? "—")</td><td>@(rule.Description ?? "—")</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        }
+    </div>
+
+    <div class="col-xl-5">
+        @if (Model.CanConfigure)
+        {
+            <section class="portal-panel mb-4">
+                <h2 class="h4">Create examination</h2>
+                <form method="post" asp-page-handler="CreateExam" class="row g-3">
+                    <div class="col-md-6"><label asp-for="NewExam.AcademicYearId" class="form-label">Year</label><select asp-for="NewExam.AcademicYearId" class="form-select"><option value="">Choose</option>@foreach (var year in Model.AcademicYears){<option value="@year.Id">@year.Name</option>}</select></div>
+                    <div class="col-md-6"><label asp-for="NewExam.ClassId" class="form-label">Class</label><select asp-for="NewExam.ClassId" class="form-select"><option value="">Choose</option>@foreach (var item in Model.Classes){<option value="@item.Id">@item.Name</option>}</select></div>
+                    <div class="col-12"><label asp-for="NewExam.Name" class="form-label"></label><input asp-for="NewExam.Name" class="form-control" placeholder="Half Yearly" /></div>
+                    <div class="col-12"><label asp-for="NewExam.Term" class="form-label"></label><input asp-for="NewExam.Term" class="form-control" /></div>
+                    <div class="col-md-6"><label asp-for="NewExam.StartDate" class="form-label">Starts</label><input asp-for="NewExam.StartDate" type="date" class="form-control" /></div>
+                    <div class="col-md-6"><label asp-for="NewExam.EndDate" class="form-label">Ends</label><input asp-for="NewExam.EndDate" type="date" class="form-control" /></div>
+                    <div class="col-md-6"><label asp-for="NewExam.MarksEntryOpensAtUtc" class="form-label">Entry opens</label><input asp-for="NewExam.MarksEntryOpensAtUtc" type="datetime-local" class="form-control" /></div>
+                    <div class="col-md-6"><label asp-for="NewExam.MarksEntryClosesAtUtc" class="form-label">Entry closes</label><input asp-for="NewExam.MarksEntryClosesAtUtc" type="datetime-local" class="form-control" /></div>
+                    <div class="col-md-6"><label asp-for="NewExam.Weightage" class="form-label">Weight %</label><input asp-for="NewExam.Weightage" class="form-control" /></div>
+                    <div class="col-12"><button class="btn btn-primary">Create exam</button></div>
+                </form>
+            </section>
+
+            @if (Model.SelectedExam is not null && Model.SelectedExam.Status != ExaminationStatus.Published)
+            {
+                <section class="portal-panel mb-4">
+                    <h2 class="h4">Add subject</h2>
+                    <form method="post" asp-page-handler="AddSubject" class="row g-3">
+                        <input type="hidden" asp-for="NewSubject.ExaminationId" value="@Model.SelectedExam.Id" />
+                        <div class="col-12"><label asp-for="NewSubject.SubjectId" class="form-label">Subject</label><select asp-for="NewSubject.SubjectId" class="form-select"><option value="">Choose</option>@foreach (var item in Model.Subjects){<option value="@item.Id">@item.Name</option>}</select></div>
+                        <div class="col-6"><label asp-for="NewSubject.MaximumMarks" class="form-label">Maximum</label><input asp-for="NewSubject.MaximumMarks" class="form-control" /></div>
+                        <div class="col-6"><label asp-for="NewSubject.PassMarks" class="form-label">Pass marks</label><input asp-for="NewSubject.PassMarks" class="form-control" /></div>
+                        <div class="col-12"><label asp-for="NewSubject.ExaminationDate" class="form-label">Date</label><input asp-for="NewSubject.ExaminationDate" type="date" class="form-control" /></div>
+                        <div class="col-6"><label asp-for="NewSubject.StartsAt" class="form-label">Starts</label><input asp-for="NewSubject.StartsAt" type="time" class="form-control" /></div>
+                        <div class="col-6"><label asp-for="NewSubject.EndsAt" class="form-label">Ends</label><input asp-for="NewSubject.EndsAt" type="time" class="form-control" /></div>
+                        <div class="col-12"><button class="btn btn-primary">Add subject</button></div>
+                    </form>
+                </section>
+
+                <section class="portal-panel mb-4">
+                    <h2 class="h4">Marks-entry window</h2>
+                    <form method="post" asp-page-handler="UpdateWindow" class="row g-3">
+                        <input type="hidden" asp-for="EntryWindow.ExaminationId" value="@Model.SelectedExam.Id" />
+                        <div class="col-12"><label asp-for="EntryWindow.OpensAtUtc" class="form-label">Opens</label><input name="EntryWindow.OpensAtUtc" value="@Model.SelectedExam.MarksEntryOpensAtUtc?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")" type="datetime-local" class="form-control" /></div>
+                        <div class="col-12"><label asp-for="EntryWindow.ClosesAtUtc" class="form-label">Closes</label><input name="EntryWindow.ClosesAtUtc" value="@Model.SelectedExam.MarksEntryClosesAtUtc?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")" type="datetime-local" class="form-control" /></div>
+                        <div class="col-12"><button class="btn btn-outline-primary">Update window</button></div>
+                    </form>
+                </section>
+
+                <section class="portal-panel">
+                    <h2 class="h4">Add grade band</h2>
+                    <form method="post" asp-page-handler="AddGrade" class="row g-3">
+                        <input type="hidden" asp-for="NewGrade.AcademicYearId" value="@Model.SelectedExam.AcademicYearId" />
+                        <input type="hidden" asp-for="NewGrade.ClassId" value="@Model.SelectedExam.ClassId" />
+                        <div class="col-6"><label asp-for="NewGrade.Grade" class="form-label"></label><input asp-for="NewGrade.Grade" class="form-control" placeholder="A1" /></div>
+                        <div class="col-6"><label asp-for="NewGrade.Points" class="form-label"></label><input asp-for="NewGrade.Points" class="form-control" /></div>
+                        <div class="col-6"><label asp-for="NewGrade.MinimumPercent" class="form-label">Minimum %</label><input asp-for="NewGrade.MinimumPercent" class="form-control" /></div>
+                        <div class="col-6"><label asp-for="NewGrade.MaximumPercent" class="form-label">Maximum %</label><input asp-for="NewGrade.MaximumPercent" class="form-control" /></div>
+                        <div class="col-12"><label asp-for="NewGrade.Description" class="form-label"></label><input asp-for="NewGrade.Description" class="form-control" /></div>
+                        <div class="col-12"><button class="btn btn-primary">Add grade</button></div>
+                    </form>
+                </section>
+            }
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

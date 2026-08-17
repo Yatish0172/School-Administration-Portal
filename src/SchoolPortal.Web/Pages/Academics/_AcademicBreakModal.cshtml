@@ -1,0 +1,57 @@
+@using SchoolPortal.Domain.Academics
+@model SchoolPortal.Web.Pages.Academics.IndexModel
+
+@foreach (var prefix in new[] { "New", "Edit" })
+{
+    var editing = prefix == "Edit";
+    var modalId = editing ? "editBreakModal" : "breakModal";
+    var handler = editing ? "UpdateBreakPeriod" : "CreateBreakPeriod";
+    <div class="modal fade" id="@modalId" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <form method="post" asp-page-handler="@handler">
+                    <div class="modal-header">
+                        <h2 class="modal-title fs-5">@(editing ? "Edit Lunch or Break" : "Add Lunch or Break")</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    @if (editing)
+                    {
+                        <div class="modal-body modal-form-grid">
+                            <input asp-for="EditBreakPeriod.Id" type="hidden" id="edit-break-id" />
+                            <input asp-for="EditBreakPeriod.Version" type="hidden" id="edit-break-version" />
+                            <div><label asp-for="EditBreakPeriod.Name" class="form-label"></label><input asp-for="EditBreakPeriod.Name" class="form-control" id="edit-break-name" /></div>
+                            <div><label asp-for="EditBreakPeriod.Scope" class="form-label"></label><select asp-for="EditBreakPeriod.Scope" class="form-select break-scope" id="edit-break-scope"><option value="AllClasses">All classes</option><option value="ClassRange">Class range</option></select></div>
+                            <div class="break-range row g-3">
+                                <div class="col"><label asp-for="EditBreakPeriod.FromClassId" class="form-label"></label><select asp-for="EditBreakPeriod.FromClassId" class="form-select" id="edit-break-from"><option value="">Choose class</option>@foreach (var item in Model.Classes.Where(x => x.IsActive)) { <option value="@item.Id">@item.Name</option> }</select></div>
+                                <div class="col"><label asp-for="EditBreakPeriod.ToClassId" class="form-label"></label><select asp-for="EditBreakPeriod.ToClassId" class="form-select" id="edit-break-to"><option value="">Choose class</option>@foreach (var item in Model.Classes.Where(x => x.IsActive)) { <option value="@item.Id">@item.Name</option> }</select></div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col"><label asp-for="EditBreakPeriod.StartsAt" class="form-label"></label><input asp-for="EditBreakPeriod.StartsAt" class="form-control" id="edit-break-start" type="time" /></div>
+                                <div class="col"><label asp-for="EditBreakPeriod.EndsAt" class="form-label"></label><input asp-for="EditBreakPeriod.EndsAt" class="form-control" id="edit-break-end" type="time" /></div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="modal-body modal-form-grid">
+                            <div><label asp-for="NewBreakPeriod.Name" class="form-label"></label><input asp-for="NewBreakPeriod.Name" class="form-control" placeholder="Lunch" /></div>
+                            <div><label asp-for="NewBreakPeriod.Scope" class="form-label"></label><select asp-for="NewBreakPeriod.Scope" class="form-select break-scope"><option value="AllClasses">All classes</option><option value="ClassRange">Class range</option></select></div>
+                            <div class="break-range row g-3">
+                                <div class="col"><label asp-for="NewBreakPeriod.FromClassId" class="form-label"></label><select asp-for="NewBreakPeriod.FromClassId" class="form-select"><option value="">Choose class</option>@foreach (var item in Model.Classes.Where(x => x.IsActive)) { <option value="@item.Id">@item.Name</option> }</select></div>
+                                <div class="col"><label asp-for="NewBreakPeriod.ToClassId" class="form-label"></label><select asp-for="NewBreakPeriod.ToClassId" class="form-select"><option value="">Choose class</option>@foreach (var item in Model.Classes.Where(x => x.IsActive)) { <option value="@item.Id">@item.Name</option> }</select></div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col"><label asp-for="NewBreakPeriod.StartsAt" class="form-label"></label><input asp-for="NewBreakPeriod.StartsAt" class="form-control" type="time" /></div>
+                                <div class="col"><label asp-for="NewBreakPeriod.EndsAt" class="form-label"></label><input asp-for="NewBreakPeriod.EndsAt" class="form-control" type="time" /></div>
+                            </div>
+                        </div>
+                    }
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button class="btn btn-primary">@(editing ? "Save Break" : "Add Break")</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

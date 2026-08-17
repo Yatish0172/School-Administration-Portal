@@ -1,0 +1,199 @@
+@page
+@model SchoolPortal.Web.Pages.Fees.LedgerModel
+@{
+    ViewData["Title"] = "Student fee ledger";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">Fees and collections</p>
+        <h1>Student ledger</h1>
+        <p>Review charges, concessions, payments, balances, and immutable reversals.</p>
+    </div>
+    <div class="record-actions">
+        <a asp-page="/Fees/Index" class="btn btn-outline-primary">Fee setup</a>
+        @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Fees.Reports))
+        {
+            <a asp-page="/Fees/Reports" class="btn btn-outline-primary">Reports</a>
+        }
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-info">@Model.StatusMessage</div>
+}
+<div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+<section class="data-panel mb-3">
+    <form method="get" class="filter-bar">
+        <div class="filter-search">
+            <label asp-for="EnrollmentId" class="form-label">Student enrollment</label>
+            <select asp-for="EnrollmentId" class="form-select">
+                <option value="">Choose student</option>
+                @foreach (var enrollment in Model.Enrollments)
+                {
+                    <option value="@enrollment.Id">
+                        @enrollment.Student.AdmissionNumber · @enrollment.Student.FullName · @enrollment.Class.Name @enrollment.Section.Name · @enrollment.AcademicYear.Name
+                    </option>
+                }
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Open ledger</button>
+    </form>
+</section>
+
+@if (Model.SelectedEnrollment is not null)
+{
+    <section class="dashboard-hero mb-3">
+        <div>
+            <p class="eyebrow">Selected student</p>
+            <h1>@Model.SelectedEnrollment.Student.FullName</h1>
+            <p class="text-muted mb-0">@Model.SelectedEnrollment.Student.AdmissionNumber · @Model.SelectedEnrollment.Class.Name @Model.SelectedEnrollment.Section.Name · @Model.SelectedEnrollment.AcademicYear.Name</p>
+        </div>
+        <div class="text-end">
+            <div class="text-muted small">Outstanding balance</div>
+            <div class="display-6 fw-bold">@Model.TotalOutstanding.ToString("N2")</div>
+        </div>
+    </section>
+
+    <section class="module-grid" aria-label="Fee ledger totals">
+        <article class="module-card"><div class="module-card-heading"><h2>Charged</h2></div><p class="display-6">@Model.TotalCharged.ToString("N2")</p></article>
+        <article class="module-card"><div class="module-card-heading"><h2>Concessions</h2></div><p class="display-6">@Model.TotalConcessions.ToString("N2")</p></article>
+        <article class="module-card"><div class="module-card-heading"><h2>Paid</h2></div><p class="display-6">@Model.TotalPaid.ToString("N2")</p></article>
+        <article class="module-card"><div class="module-card-heading"><h2>Outstanding</h2></div><p class="display-6">@Model.TotalOutstanding.ToString("N2")</p></article>
+    </section>
+
+    <section class="data-panel mb-3">
+        <div class="panel-heading"><div><h2>Charges and dues</h2><p>Balances exclude reversed payments while preserving their allocation records.</p></div></div>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr><th>Due</th><th>Fee</th><th>Period</th><th>Charged</th><th>Concession</th><th>Paid</th><th>Balance</th></tr></thead>
+                <tbody>
+                @if (Model.Charges.Count == 0)
+                {
+                    <tr><td colspan="7" class="empty-cell">No charges for this enrollment.</td></tr>
+                }
+                else
+                {
+                    @foreach (var row in Model.Charges)
+                    {
+                        <tr>
+                            <td>@row.Charge.DueDate.ToString("dd MMM yyyy")</td>
+                            <td><strong>@row.Charge.FeeHead.Name</strong><div class="table-subtext">@row.Charge.Description</div></td>
+                            <td>@row.Charge.Period</td>
+                            <td>@row.Amount.ToString("N2")</td>
+                            <td>@row.Concession.ToString("N2")</td>
+                            <td>@row.Paid.ToString("N2")</td>
+                            <td><strong>@row.Outstanding.ToString("N2")</strong></td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    @if (Model.CanPost && Model.TotalOutstanding > 0)
+    {
+        <section class="data-panel mb-3">
+            <div class="panel-heading"><div><h2>Post payment</h2><p>The amount is allocated to the oldest outstanding charges first. Safe retries reuse the same key.</p></div></div>
+            <form method="post" asp-page-handler="Payment" class="form-grid form-grid-4">
+                <input asp-for="Payment.StudentEnrollmentId" type="hidden" value="@Model.SelectedEnrollment.Id" />
+                <input asp-for="Payment.IdempotencyKey" type="hidden" />
+                <div><label asp-for="Payment.PaymentDate" class="form-label">Payment date</label><input asp-for="Payment.PaymentDate" class="form-control" type="date" /></div>
+                <div>
+                    <label asp-for="Payment.Mode" class="form-label"></label>
+                    <select asp-for="Payment.Mode" asp-items="Html.GetEnumSelectList<SchoolPortal.Domain.Fees.FeePaymentMode>()" class="form-select"></select>
+                </div>
+                <div><label asp-for="Payment.Amount" class="form-label"></label><input asp-for="Payment.Amount" class="form-control" type="number" min="0.01" max="@Model.TotalOutstanding" step="0.01" /></div>
+                <div><label asp-for="Payment.Reference" class="form-label"></label><input asp-for="Payment.Reference" class="form-control" placeholder="Required unless cash" /></div>
+                <div><label asp-for="Payment.BankName" class="form-label">Bank / provider</label><input asp-for="Payment.BankName" class="form-control" /></div>
+                <div class="form-span-2"><label asp-for="Payment.Remarks" class="form-label"></label><input asp-for="Payment.Remarks" class="form-control" /></div>
+                <div class="d-flex align-items-end justify-content-end"><button type="submit" class="btn btn-primary">Post and issue receipt</button></div>
+            </form>
+        </section>
+    }
+
+    @if (Model.CanConfigure)
+    {
+        <section class="data-panel mb-3">
+            <div class="panel-heading"><div><h2>Adjustments</h2><p>Add an exceptional direct charge or an authorized concession.</p></div></div>
+            <form method="post" asp-page-handler="AddCharge" class="form-grid form-grid-4">
+                <input asp-for="NewCharge.StudentEnrollmentId" type="hidden" value="@Model.SelectedEnrollment.Id" />
+                <div>
+                    <label asp-for="NewCharge.FeeHeadId" class="form-label">Fee head</label>
+                    <select asp-for="NewCharge.FeeHeadId" class="form-select">
+                        <option value="">Choose head</option>
+                        @foreach (var head in Model.Heads) { <option value="@head.Id">@head.Name</option> }
+                    </select>
+                </div>
+                <div><label asp-for="NewCharge.Period" class="form-label"></label><input asp-for="NewCharge.Period" class="form-control" /></div>
+                <div><label asp-for="NewCharge.DueDate" class="form-label">Due date</label><input asp-for="NewCharge.DueDate" class="form-control" type="date" /></div>
+                <div><label asp-for="NewCharge.Amount" class="form-label"></label><input asp-for="NewCharge.Amount" class="form-control" type="number" min="0.01" step="0.01" /></div>
+                <div class="form-span-2"><label asp-for="NewCharge.Description" class="form-label"></label><input asp-for="NewCharge.Description" class="form-control" /></div>
+                <div class="d-flex align-items-end justify-content-end"><button type="submit" class="btn btn-outline-primary">Add direct charge</button></div>
+            </form>
+            <form method="post" asp-page-handler="AddConcession" class="form-grid form-grid-4 panel-heading-border pt-3">
+                <input asp-for="NewConcession.StudentEnrollmentId" type="hidden" value="@Model.SelectedEnrollment.Id" />
+                <div>
+                    <label asp-for="NewConcession.StudentChargeId" class="form-label">Outstanding charge</label>
+                    <select asp-for="NewConcession.StudentChargeId" class="form-select">
+                        <option value="">Choose charge</option>
+                        @foreach (var row in Model.Charges.Where(x => x.Outstanding > 0))
+                        {
+                            <option value="@row.Charge.Id">@row.Charge.FeeHead.Name · @row.Charge.Period · @row.Outstanding.ToString("N2")</option>
+                        }
+                    </select>
+                </div>
+                <div><label asp-for="NewConcession.Amount" class="form-label"></label><input asp-for="NewConcession.Amount" class="form-control" type="number" min="0.01" step="0.01" /></div>
+                <div class="form-span-2"><label asp-for="NewConcession.Reason" class="form-label"></label><input asp-for="NewConcession.Reason" class="form-control" /></div>
+                <div><button type="submit" class="btn btn-outline-primary">Record concession</button></div>
+            </form>
+        </section>
+    }
+
+    <section class="data-panel">
+        <div class="panel-heading"><div><h2>Payment history</h2><p>Posted and reversed transactions remain visible permanently.</p></div></div>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr><th>Receipt</th><th>Date</th><th>Mode</th><th>Reference</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                @if (Model.Payments.Count == 0)
+                {
+                    <tr><td colspan="7" class="empty-cell">No payments recorded.</td></tr>
+                }
+                else
+                {
+                    @foreach (var payment in Model.Payments)
+                    {
+                        <tr>
+                            <td><a asp-page="/Fees/Receipt" asp-route-number="@payment.Receipt.ReceiptNumber" class="record-link">@payment.Receipt.ReceiptNumber</a></td>
+                            <td>@payment.PaymentDate.ToString("dd MMM yyyy")</td>
+                            <td>@payment.Mode</td>
+                            <td>@payment.Reference</td>
+                            <td>@payment.Amount.ToString("N2")</td>
+                            <td><span class="status-pill @(payment.Status == SchoolPortal.Domain.Fees.FeePaymentStatus.Posted ? "status-active" : "status-left")">@payment.Status</span></td>
+                            <td>
+                                @if (Model.CanReverse && payment.Status == SchoolPortal.Domain.Fees.FeePaymentStatus.Posted)
+                                {
+                                    <form method="post" asp-page-handler="Reverse" class="d-flex gap-2">
+                                        <input type="hidden" name="paymentId" value="@payment.Id" />
+                                        <input type="hidden" name="enrollmentId" value="@Model.SelectedEnrollment.Id" />
+                                        <input asp-for="ReversalReason" class="form-control form-control-sm" minlength="5" required placeholder="Reversal reason" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Reverse</button>
+                                    </form>
+                                }
+                                else if (payment.Reversal is not null)
+                                {
+                                    <span class="table-subtext">@payment.Reversal.Reason</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
