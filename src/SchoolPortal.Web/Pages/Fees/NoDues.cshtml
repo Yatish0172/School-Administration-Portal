@@ -1,0 +1,65 @@
+@page
+@model SchoolPortal.Web.Pages.Fees.NoDuesModel
+@{
+    ViewData["Title"] = "No dues certificate";
+}
+
+<div class="receipt-actions mb-3">
+    <a asp-page="/Fees/Ledger" asp-route-EnrollmentId="@Model.Enrollment.Id" class="btn btn-outline-primary">Back to ledger</a>
+    @if (Model.CanIssue)
+    {
+        <form method="post" asp-page-handler="Print">
+            <input type="hidden" name="EnrollmentId" value="@Model.Enrollment.Id" />
+            <button type="submit" class="btn btn-primary">Print NOC</button>
+        </form>
+    }
+</div>
+
+@if (!Model.CanIssue)
+{
+    <div class="alert alert-warning">
+        <strong>This NOC cannot be issued yet.</strong>
+        The student has an outstanding fee balance of @Model.TotalOutstanding.ToString("N2").
+        Clear or formally adjust the dues before printing the certificate.
+    </div>
+}
+
+<article class="receipt-page">
+    <header class="receipt-header">
+        <div>
+            <p class="eyebrow">School Administration Portal</p>
+            <h1>No Dues Certificate</h1>
+            <p>Certificate @Model.CertificateNumber</p>
+        </div>
+        <div class="text-end">
+            <strong>@Model.IssueDate.ToString("dd MMM yyyy")</strong>
+            <div>Academic year @Model.Enrollment.AcademicYear.Name</div>
+        </div>
+    </header>
+
+    <section class="noc-body">
+        <p>This is to certify that <strong>@Model.Enrollment.Student.FullName</strong>,
+        admission number <strong>@Model.Enrollment.Student.AdmissionNumber</strong>,
+        enrolled in <strong>@Model.Enrollment.Class.Name @Model.Enrollment.Section.Name</strong>,
+        has no outstanding school fee dues for academic year
+        <strong>@Model.Enrollment.AcademicYear.Name</strong> as of
+        <strong>@Model.IssueDate.ToString("dd MMM yyyy")</strong>.</p>
+
+        <div class="noc-balance">
+            <span>Outstanding balance verified</span>
+            <strong>@Model.TotalOutstanding.ToString("N2")</strong>
+        </div>
+    </section>
+
+    <footer class="receipt-signatures">
+        <div>Accounts office</div>
+        <div>Authorized signatory</div>
+    </footer>
+</article>
+
+@if (Model.PrintNow && Model.CanIssue)
+{
+    @section Scripts {
+        <script>window.addEventListener("load", () => window.print());</script>
+    }
+}

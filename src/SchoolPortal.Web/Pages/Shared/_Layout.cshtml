@@ -60,7 +60,7 @@
                             @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Fees.View))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-page="/Fees/Ledger">Fees</a>
+                                    <a class="nav-link" asp-page="/Fees/Overview">Fees</a>
                                 </li>
                             }
                             @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Library.View))

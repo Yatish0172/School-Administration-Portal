@@ -1,0 +1,74 @@
+@page
+@model SchoolPortal.Web.Pages.Fees.OverviewModel
+@{
+    ViewData["Title"] = "Fees and collections";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">Fees and collections</p>
+        <h1>Fees overview</h1>
+        <p>Collect payments, find student accounts, and see what needs attention today.</p>
+    </div>
+    <div class="record-actions">
+        @if (Model.CanPost)
+        {
+            <a asp-page="/Fees/Ledger" class="btn btn-primary">Collect payment</a>
+        }
+        <a asp-page="/Fees/Register" class="btn btn-outline-primary">Payment register</a>
+    </div>
+</section>
+
+<partial name="_FeesNav" />
+
+<section class="data-panel mb-3 fee-search-panel">
+    <form method="get" asp-page="/Fees/Ledger" class="fee-student-search">
+        <div>
+            <label for="StudentQuery" class="form-label">Find a student</label>
+            <input id="StudentQuery" name="StudentQuery" class="form-control form-control-lg"
+                   minlength="2" autocomplete="off"
+                   placeholder="Enter student name or admission number" />
+            <div class="form-text">Enter at least two letters or numbers.</div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Search</button>
+    </form>
+</section>
+
+<section class="module-grid fee-metrics" aria-label="Fee summary">
+    <article class="module-card"><div class="module-card-heading"><h2>Collected today</h2></div><p class="display-6">@Model.CollectedToday.ToString("N2")</p><span class="module-state">@Model.PaymentCountToday payment(s)</span></article>
+    <article class="module-card"><div class="module-card-heading"><h2>Total outstanding</h2></div><p class="display-6">@Model.TotalOutstanding.ToString("N2")</p><span class="module-state">@Model.StudentsWithBalance student(s)</span></article>
+    <article class="module-card"><div class="module-card-heading"><h2>Overdue accounts</h2></div><p class="display-6">@Model.OverdueStudents.ToString("N0")</p><span class="module-state">Past the due date</span></article>
+    <article class="module-card"><div class="module-card-heading"><h2>Reversed today</h2></div><p class="display-6">@Model.ReversedToday.ToString("N2")</p><span class="module-state">Kept in the audit history</span></article>
+</section>
+
+<section class="data-panel">
+    <div class="panel-heading">
+        <div><h2>Recent payments</h2><p>The latest receipts recorded by the school.</p></div>
+        <a asp-page="/Fees/Register" class="btn btn-sm btn-outline-primary">View all payments</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Receipt</th><th>Student</th><th>Date</th><th>Mode</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+            @if (Model.RecentPayments.Count == 0)
+            {
+                <tr><td colspan="6" class="empty-cell">No payments have been recorded yet.</td></tr>
+            }
+            else
+            {
+                @foreach (var payment in Model.RecentPayments)
+                {
+                    <tr>
+                        <td><a asp-page="/Fees/Receipt" asp-route-number="@payment.ReceiptNumber" class="record-link">@payment.ReceiptNumber</a></td>
+                        <td><a asp-page="/Fees/Ledger" asp-route-EnrollmentId="@payment.EnrollmentId" class="record-link">@payment.StudentName</a><div class="table-subtext">@payment.AdmissionNumber � @payment.ClassSection</div></td>
+                        <td>@payment.Date.ToString("dd MMM yyyy")</td>
+                        <td>@payment.Mode</td>
+                        <td><strong>@payment.Amount.ToString("N2")</strong></td>
+                        <td><span class="status-pill @(payment.Status == SchoolPortal.Domain.Fees.FeePaymentStatus.Posted ? "status-active" : "status-left")">@payment.Status</span></td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>

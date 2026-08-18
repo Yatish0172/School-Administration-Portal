@@ -3,6 +3,7 @@ using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
 using System.Globalization;
+using System.Text;
 
 namespace SchoolPortal.Web.Reporting;
 
@@ -105,6 +106,27 @@ public sealed class ReportExportService
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
         return stream.ToArray();
+    }
+
+    public byte[] ToCsv(ReportData report)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine(string.Join(
+            ',',
+            report.Definition.Columns.Select(column => Csv(column.Label))));
+        foreach (var row in report.Rows)
+        {
+            builder.AppendLine(string.Join(
+                ',',
+                report.Definition.Columns.Select(column =>
+                {
+                    row.TryGetValue(column.Key, out var value);
+                    return Csv(Format(value, column.Kind));
+                })));
+        }
+
+        return new UTF8Encoding(encoderShouldEmitUTF8Identifier: true)
+            .GetBytes(builder.ToString());
     }
 
     public byte[] ToPdf(ReportData report)
@@ -380,6 +402,18 @@ public sealed class ReportExportService
                 page.Width.Point - margin * 2,
                 12),
             XStringFormats.TopRight);
+    }
+
+    private static string Csv(string value)
+    {
+        var safe = value;
+        if (safe.Length > 0 && safe[0] is '=' or '+' or '-' or '@')
+        {
+            safe = "'" + safe;
+        }
+
+        var quote = ((char)34).ToString();
+        return quote + safe.Replace(quote, quote + quote) + quote;
     }
 
     private static string Format(object? value, ReportValueKind kind) =>

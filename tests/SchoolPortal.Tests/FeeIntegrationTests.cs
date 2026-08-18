@@ -33,6 +33,44 @@ public sealed partial class FeeIntegrationTests(
                 account.Password);
             Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
 
+            using (var overview = await client.GetAsync("/Fees/Overview"))
+            {
+                Assert.Equal(HttpStatusCode.OK, overview.StatusCode);
+                var html = await overview.Content.ReadAsStringAsync();
+                Assert.Contains("Fees overview", html);
+                Assert.Contains("Collect payment", html);
+                Assert.Contains("Payment register", html);
+            }
+
+            using (var search = await client.GetAsync(
+                $"/Fees/Ledger?StudentQuery={fixture.AdmissionNumber}"))
+            {
+                Assert.Equal(HttpStatusCode.OK, search.StatusCode);
+                var html = await search.Content.ReadAsStringAsync();
+                Assert.Contains(fixture.AdmissionNumber, html);
+                Assert.Contains("Finance Student", html);
+                Assert.DoesNotContain("<select name=\"EnrollmentId\"", html);
+            }
+
+            using (var invoice = await client.GetAsync(
+                $"/Fees/Invoice?EnrollmentId={fixture.EnrollmentId}"))
+            {
+                Assert.Equal(HttpStatusCode.OK, invoice.StatusCode);
+                var html = await invoice.Content.ReadAsStringAsync();
+                Assert.Contains("Fee invoice", html);
+                Assert.Contains(fixture.AdmissionNumber, html);
+                Assert.Contains("150.00", html);
+            }
+
+            using (var noDues = await client.GetAsync(
+                $"/Fees/NoDues?EnrollmentId={fixture.EnrollmentId}"))
+            {
+                Assert.Equal(HttpStatusCode.OK, noDues.StatusCode);
+                Assert.Contains(
+                    "cannot be issued yet",
+                    await noDues.Content.ReadAsStringAsync());
+            }
+
             var idempotencyKey = Guid.NewGuid().ToString("N");
             using var overpayment = await PostPaymentAsync(
                 client,
@@ -91,6 +129,16 @@ public sealed partial class FeeIntegrationTests(
                 Assert.True(await dbContext.Set<AuditEvent>().AnyAsync(x =>
                     x.EntityId == payment.Id.ToString()
                     && x.EventType == "fee.payment.posted"));
+            }
+
+            using (var register = await client.GetAsync(
+                $"/Fees/Register?Search={receiptNumber}"))
+            {
+                Assert.Equal(HttpStatusCode.OK, register.StatusCode);
+                var html = await register.Content.ReadAsStringAsync();
+                Assert.Contains(receiptNumber, html);
+                Assert.Contains(fixture.AdmissionNumber, html);
+                Assert.Contains("120.00", html);
             }
 
             var receiptPath = $"/Fees/Receipt?number={receiptNumber}";
@@ -313,7 +361,8 @@ public sealed partial class FeeIntegrationTests(
             section.Id,
             student.Id,
             enrollment.Id,
-            head.Id);
+            head.Id,
+            student.AdmissionNumber);
     }
 
     private async Task CleanupFixtureAsync(FeeFixture fixture)
@@ -450,5 +499,6 @@ public sealed partial class FeeIntegrationTests(
         Guid SectionId,
         Guid StudentId,
         Guid EnrollmentId,
-        Guid HeadId);
+        Guid HeadId,
+        string AdmissionNumber);
 }

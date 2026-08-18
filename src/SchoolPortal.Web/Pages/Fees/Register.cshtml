@@ -1,0 +1,82 @@
+@page
+@model SchoolPortal.Web.Pages.Fees.RegisterModel
+@{
+    ViewData["Title"] = "Payment register";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">Fees and collections</p>
+        <h1>Payment register</h1>
+        <p>Find every recorded payment, receipt, reference, and reversal in one place.</p>
+    </div>
+    @if (Model.CanPost)
+    {
+        <a asp-page="/Fees/Ledger" class="btn btn-primary">Record payment</a>
+    }
+</section>
+
+<partial name="_FeesNav" />
+
+<section class="module-grid fee-metrics" aria-label="Payment totals">
+    <article class="module-card"><div class="module-card-heading"><h2>Posted</h2></div><p class="display-6">@Model.PostedTotal.ToString("N2")</p></article>
+    <article class="module-card"><div class="module-card-heading"><h2>Reversed</h2></div><p class="display-6">@Model.ReversedTotal.ToString("N2")</p></article>
+    <article class="module-card"><div class="module-card-heading"><h2>Net collection</h2></div><p class="display-6">@Model.NetTotal.ToString("N2")</p></article>
+</section>
+
+<section class="data-panel mb-3">
+    <form method="get" class="filter-bar fee-register-filters">
+        <div class="filter-search">
+            <label asp-for="Search" class="form-label">Search</label>
+            <input asp-for="Search" class="form-control" placeholder="Receipt, student, admission no. or reference" />
+        </div>
+        <div><label asp-for="From" class="form-label"></label><input asp-for="From" class="form-control" type="date" /></div>
+        <div><label asp-for="To" class="form-label"></label><input asp-for="To" class="form-control" type="date" /></div>
+        <div>
+            <label asp-for="Mode" class="form-label"></label>
+            <select asp-for="Mode" asp-items="Html.GetEnumSelectList<SchoolPortal.Domain.Fees.FeePaymentMode>()" class="form-select">
+                <option value="">All modes</option>
+            </select>
+        </div>
+        <div>
+            <label asp-for="Status" class="form-label"></label>
+            <select asp-for="Status" asp-items="Html.GetEnumSelectList<SchoolPortal.Domain.Fees.FeePaymentStatus>()" class="form-select">
+                <option value="">All statuses</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Apply filters</button>
+        <a asp-page="/Fees/Register" class="btn btn-outline-secondary">Clear</a>
+    </form>
+</section>
+
+<section class="data-panel">
+    <div class="panel-heading">
+        <div><h2>Payments</h2><p>@Model.Payments.Count.ToString("N0") result(s) for the selected filters.</p></div>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Receipt</th><th>Student</th><th>Date</th><th>Mode / reference</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+            @if (Model.Payments.Count == 0)
+            {
+                <tr><td colspan="7" class="empty-cell">No payments match these filters.</td></tr>
+            }
+            else
+            {
+                @foreach (var payment in Model.Payments)
+                {
+                    <tr>
+                        <td><a asp-page="/Fees/Receipt" asp-route-number="@payment.ReceiptNumber" class="record-link">@payment.ReceiptNumber</a></td>
+                        <td><strong>@payment.StudentName</strong><div class="table-subtext">@payment.AdmissionNumber � @payment.ClassSection</div></td>
+                        <td>@payment.Date.ToString("dd MMM yyyy")</td>
+                        <td>@payment.Mode<div class="table-subtext">@payment.Reference</div></td>
+                        <td><strong>@payment.Amount.ToString("N2")</strong></td>
+                        <td><span class="status-pill @(payment.Status == SchoolPortal.Domain.Fees.FeePaymentStatus.Posted ? "status-active" : "status-left")">@payment.Status</span></td>
+                        <td><a asp-page="/Fees/Ledger" asp-route-EnrollmentId="@payment.EnrollmentId" class="btn btn-sm btn-outline-primary">Open ledger</a></td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>

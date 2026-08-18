@@ -1,0 +1,20 @@
+@{
+    var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? string.Empty;
+    string LinkClass(string page) =>
+        currentPage.Equals(page, StringComparison.OrdinalIgnoreCase)
+            ? "fees-nav-link active"
+            : "fees-nav-link";
+}
+<nav class="fees-nav mb-3" aria-label="Fees and collections">
+    <a asp-page="/Fees/Overview" class="@LinkClass("/Fees/Overview")">Overview</a>
+    <a asp-page="/Fees/Ledger" class="@LinkClass("/Fees/Ledger")">Collect payment</a>
+    <a asp-page="/Fees/Register" class="@LinkClass("/Fees/Register")">Payment register</a>
+    @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Fees.Configure))
+    {
+        <a asp-page="/Fees/Index" class="@LinkClass("/Fees/Index")">Fee structure</a>
+    }
+    @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Fees.Reports))
+    {
+        <a asp-page="/Fees/Reports" class="@LinkClass("/Fees/Reports")">Fee reports</a>
+    }
+</nav>

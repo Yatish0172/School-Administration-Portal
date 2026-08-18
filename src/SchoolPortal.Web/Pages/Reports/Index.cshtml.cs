@@ -99,9 +99,10 @@ public sealed class IndexModel(
         }
 
         if (!string.Equals(format, "xlsx", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(format, "pdf", StringComparison.OrdinalIgnoreCase))
+            && !string.Equals(format, "pdf", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
         {
-            return BadRequest("The export format must be xlsx or pdf.");
+            return BadRequest("The export format must be xlsx, pdf, or csv.");
         }
 
         try
@@ -111,9 +112,14 @@ public sealed class IndexModel(
                 CreateFilters(),
                 User,
                 cancellationToken);
-            var bytes = string.Equals(format, "xlsx", StringComparison.OrdinalIgnoreCase)
-                ? exportService.ToExcel(report)
-                : exportService.ToPdf(report);
+            var normalizedFormat = format.ToLowerInvariant();
+            var bytes = normalizedFormat switch
+            {
+                "xlsx" => exportService.ToExcel(report),
+                "pdf" => exportService.ToPdf(report),
+                "csv" => exportService.ToCsv(report),
+                _ => throw new InvalidOperationException("Unsupported export format."),
+            };
             var auditId = Guid.NewGuid();
             auditWriter.Add(
                 report.Definition.IsSensitive
@@ -134,12 +140,13 @@ public sealed class IndexModel(
                 });
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            var contentType = string.Equals(
-                format,
-                "xlsx",
-                StringComparison.OrdinalIgnoreCase)
-                ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                : "application/pdf";
+            var contentType = normalizedFormat switch
+            {
+                "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "pdf" => "application/pdf",
+                "csv" => "text/csv; charset=utf-8",
+                _ => "application/octet-stream",
+            };
             var filename =
                 $"{report.Definition.Key}-{report.GeneratedAtUtc:yyyyMMdd-HHmmss}.{format.ToLowerInvariant()}";
             return File(bytes, contentType, filename);
