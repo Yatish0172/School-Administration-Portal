@@ -41,6 +41,10 @@
                 const value = staff[control.dataset.field];
                 if (control.type === "checkbox") {
                     control.checked = Boolean(value);
+                } else if (control.tagName === "SELECT") {
+                    const option = Array.from(control.options).find((item) =>
+                        item.value.localeCompare(value ?? "", undefined, { sensitivity: "base" }) === 0);
+                    control.value = option?.value ?? "";
                 } else if (control.type === "date") {
                     control.value = value || "";
                 } else {

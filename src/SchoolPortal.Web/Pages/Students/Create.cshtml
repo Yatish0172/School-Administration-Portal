@@ -90,7 +90,9 @@
             </div>
             <div>
                 <label asp-for="Input.State" class="form-label"></label>
-                <input asp-for="Input.State" class="form-control" />
+                <select asp-for="Input.State" class="form-select">
+                    <partial name="_IndiaStateOptions" />
+                </select>
             </div>
             <div>
                 <label asp-for="Input.PinCode" class="form-label"></label>

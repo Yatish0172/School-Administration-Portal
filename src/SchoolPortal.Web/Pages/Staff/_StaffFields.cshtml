@@ -23,7 +23,12 @@
     <input name="@(prefix + ".PortalUserId")" type="hidden" data-field="PortalUserId" />
     <div class="col-12"><label class="form-label">Address</label><textarea name="@(prefix + ".Address")" class="form-control" rows="2" data-field="Address"></textarea></div>
     <div class="col-md-4"><label class="form-label">City</label><input name="@(prefix + ".City")" class="form-control" data-field="City" /></div>
-    <div class="col-md-4"><label class="form-label">State</label><input name="@(prefix + ".State")" class="form-control" data-field="State" /></div>
+    <div class="col-md-4">
+        <label class="form-label">State</label>
+        <select name="@(prefix + ".State")" class="form-select" data-field="State">
+            <partial name="_IndiaStateOptions" />
+        </select>
+    </div>
     <div class="col-md-4"><label class="form-label">Postal code</label><input name="@(prefix + ".PostalCode")" class="form-control" data-field="PostalCode" /></div>
     <div class="col-md-6"><label class="form-label">Emergency contact</label><input name="@(prefix + ".EmergencyContactName")" class="form-control" data-field="EmergencyContactName" /></div>
     <div class="col-md-6"><label class="form-label">Emergency phone</label><input name="@(prefix + ".EmergencyContactPhone")" class="form-control" data-field="EmergencyContactPhone" /></div>

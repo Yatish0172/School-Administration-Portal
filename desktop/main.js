@@ -12,6 +12,7 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 const READY_URL = `${BASE_URL}/health/ready`;
 
 let mainWindow = null;
+let startupWindow = null;
 let webProcess = null;
 let ownsWebProcess = false;
 let shuttingDown = false;
@@ -20,10 +21,11 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    if (!mainWindow) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.show();
-    mainWindow.focus();
+    const activeWindow = mainWindow || startupWindow;
+    if (!activeWindow) return;
+    if (activeWindow.isMinimized()) activeWindow.restore();
+    activeWindow.show();
+    activeWindow.focus();
   });
 }
 
@@ -214,6 +216,51 @@ async function startBackend() {
   await waitForReady();
 }
 
+function createStartupWindow() {
+  startupWindow = new BrowserWindow({
+    width: 460,
+    height: 280,
+    frame: false,
+    resizable: false,
+    show: false,
+    center: true,
+    backgroundColor: '#0f172a',
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+
+  const markup = [
+    '<!doctype html><html lang="en"><head><meta charset="utf-8">',
+    '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    '<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;',
+    'background:linear-gradient(145deg,#0f172a,#1e3a5f);color:#f8fafc;font-family:"Segoe UI",sans-serif;',
+    'text-align:center}main{padding:36px}h1{margin:0 0 10px;font-size:26px;font-weight:650}',
+    'p{margin:0;color:#cbd5e1;font-size:14px}.loader{width:42px;height:42px;margin:28px auto 0;',
+    'border:4px solid rgba(255,255,255,.2);border-top-color:#38bdf8;border-radius:50%;',
+    'animation:spin .9s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style>',
+    '</head><body><main><h1>School Administration Portal</h1>',
+    '<p>Starting the local database and portal...</p>',
+    '<div class="loader" aria-label="Starting"></div></main></body></html>',
+  ].join('');
+
+  startupWindow.once('ready-to-show', () => startupWindow?.show());
+  startupWindow.loadURL(
+    'data:text/html;charset=utf-8,' + encodeURIComponent(markup)
+  );
+  startupWindow.on('closed', () => {
+    startupWindow = null;
+  });
+}
+
+function closeStartupWindow() {
+  if (!startupWindow || startupWindow.isDestroyed()) return;
+  startupWindow.close();
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
@@ -230,7 +277,10 @@ function createWindow() {
     },
   });
 
-  mainWindow.once('ready-to-show', () => mainWindow.show());
+  mainWindow.once('ready-to-show', () => {
+    closeStartupWindow();
+    mainWindow.show();
+  });
   mainWindow.loadURL(BASE_URL);
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -295,11 +345,14 @@ function stopOwnedBackend() {
 }
 
 app.whenReady().then(async () => {
+  createStartupWindow();
+
   try {
     await startBackend();
     configureMenu();
     createWindow();
   } catch (error) {
+    closeStartupWindow();
     dialog.showErrorBox(
       'The new portal could not start',
       `${error.message}\n\nThe legacy portal has not been changed.`

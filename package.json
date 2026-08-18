@@ -1,7 +1,7 @@
 {
     "name":  "school-admin-portal",
     "productName":  "School Admin Portal",
-    "version":  "0.1.0",
+    "version":  "0.1.1",
     "description":  "Offline on-premise school management system",
     "main":  "desktop/main.js",
     "private":  true,
@@ -14,7 +14,8 @@
                     "build:css":  "node build_bundle.js",
                     "watch:css":  "tailwindcss -i ./css/src.css -o ./css/app.css --watch",
                     "keygen":  "node tools/generate-key.js",
-                    "dist":  "electron-builder --win portable"
+                    "dist":  "electron-builder --win nsis",
+                    "dist:portable":  "electron-builder --win portable"
                 },
     "dependencies":  {
                          "archiver":  "^6.0.2",
@@ -52,7 +53,7 @@
                   "win":  {
                               "target":  [
                                              {
-                                                 "target":  "portable",
+                                                 "target":  "nsis",
                                                  "arch":  [
                                                               "x64"
                                                           ]
@@ -60,6 +61,13 @@
                                          ],
                               "signAndEditExecutable":  false
                           },
+                  "nsis":  {
+                               "artifactName":  "SchoolAdminPortal-Setup-${version}.${ext}",
+                               "oneClick":  false,
+                               "perMachine":  false,
+                               "allowToChangeInstallationDirectory":  true,
+                               "runAfterFinish":  true
+                           },
                   "portable":  {
                                    "artifactName":  "SchoolAdminPortal-${version}-portable.exe"
                                }

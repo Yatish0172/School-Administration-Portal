@@ -46,6 +46,7 @@ public sealed partial class StaffIntegrationTests(
         var standaloneTeacherNumber = $"TCH-{Guid.NewGuid():N}"[..16].ToUpperInvariant();
         Guid staffId = default;
         Guid standaloneTeacherId = default;
+        Guid standaloneTeacherUserId = default;
         Guid classId = default;
         Guid sectionId = default;
         Guid subjectId = default;
@@ -67,6 +68,10 @@ public sealed partial class StaffIntegrationTests(
                 Assert.Contains("Staff Details", html);
                 Assert.Contains("Designation", html);
                 Assert.Contains("Emergency contact", html);
+                Assert.Contains("<select name=\"NewStaff.State\"", html);
+                Assert.Contains("<optgroup label=\"States\">", html);
+                Assert.Contains("Uttarakhand", html);
+                Assert.Contains("Andaman and Nicobar Islands", html);
                 Assert.DoesNotContain(">Portal account<", html);
             }
 
@@ -126,7 +131,17 @@ public sealed partial class StaffIntegrationTests(
                 .AsNoTracking()
                 .SingleAsync(x => x.StaffNumber == standaloneTeacherNumber);
             standaloneTeacherId = standaloneTeacher.Id;
-            Assert.Null(standaloneTeacher.PortalUserId);
+            Assert.NotNull(standaloneTeacher.PortalUserId);
+            standaloneTeacherUserId = standaloneTeacher.PortalUserId.Value;
+            var provisionedUserManager = scope.ServiceProvider
+                .GetRequiredService<UserManager<ApplicationUser>>();
+            var provisionedTeacher = await provisionedUserManager.FindByIdAsync(
+                standaloneTeacherUserId.ToString());
+            Assert.NotNull(provisionedTeacher);
+            Assert.True(await provisionedUserManager.IsInRoleAsync(
+                provisionedTeacher,
+                RoleCatalog.Teacher));
+            Assert.False(await provisionedUserManager.HasPasswordAsync(provisionedTeacher));
 
             var today = DateOnly.FromDateTime(DateTime.Today);
             var year = await dbContext.Set<AcademicYear>()
@@ -194,6 +209,12 @@ public sealed partial class StaffIntegrationTests(
             Assert.Contains("Mathematics", teacherHtml);
             Assert.Contains(schoolClass.Name, teacherHtml);
             Assert.Contains("Meera Nair", teacherHtml);
+
+            using var academicsPage = await client.GetAsync("/Academics");
+            Assert.Equal(HttpStatusCode.OK, academicsPage.StatusCode);
+            var academicsHtml = await academicsPage.Content.ReadAsStringAsync();
+            Assert.Contains($"value=\"{standaloneTeacherUserId}\"", academicsHtml);
+            Assert.Contains("Meera Nair", academicsHtml);
         }
         finally
         {
@@ -244,6 +265,16 @@ public sealed partial class StaffIntegrationTests(
 
             var userManager = scope.ServiceProvider
                 .GetRequiredService<UserManager<ApplicationUser>>();
+            if (standaloneTeacherUserId != Guid.Empty)
+            {
+                var provisionedTeacher = await userManager.FindByIdAsync(
+                    standaloneTeacherUserId.ToString());
+                if (provisionedTeacher is not null)
+                {
+                    Assert.True((await userManager.DeleteAsync(provisionedTeacher)).Succeeded);
+                }
+            }
+
             var user = await userManager.FindByNameAsync(username);
             if (user is not null)
             {

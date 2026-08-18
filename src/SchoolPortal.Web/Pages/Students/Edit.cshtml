@@ -35,7 +35,12 @@
             <div class="form-span-2"><label asp-for="Input.PermanentAddress" class="form-label"></label><textarea asp-for="Input.PermanentAddress" class="form-control" rows="2"></textarea></div>
             <div class="form-span-2"><label asp-for="Input.CorrespondenceAddress" class="form-label"></label><textarea asp-for="Input.CorrespondenceAddress" class="form-control" rows="2"></textarea></div>
             <div><label asp-for="Input.City" class="form-label"></label><input asp-for="Input.City" class="form-control" /></div>
-            <div><label asp-for="Input.State" class="form-label"></label><input asp-for="Input.State" class="form-control" /></div>
+            <div>
+                <label asp-for="Input.State" class="form-label"></label>
+                <select asp-for="Input.State" class="form-select">
+                    <partial name="_IndiaStateOptions" />
+                </select>
+            </div>
             <div><label asp-for="Input.PinCode" class="form-label"></label><input asp-for="Input.PinCode" class="form-control" maxlength="6" /></div>
             <div class="form-span-2"><label asp-for="Input.Remarks" class="form-label"></label><textarea asp-for="Input.Remarks" class="form-control" rows="2"></textarea></div>
         </div>
