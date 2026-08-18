@@ -141,10 +141,22 @@ public sealed class ReportExportService
                 Subject = "School Administration Portal report export",
             },
         };
-        var titleFont = new XFont("Arial", 16, XFontStyleEx.Bold);
-        var metaFont = new XFont("Arial", 8, XFontStyleEx.Regular);
-        var headerFont = new XFont("Arial", 7, XFontStyleEx.Bold);
-        var bodyFont = new XFont("Arial", 7, XFontStyleEx.Regular);
+        var titleFont = new XFont(
+            PortalFontResolver.FamilyName,
+            16,
+            XFontStyleEx.Bold);
+        var metaFont = new XFont(
+            PortalFontResolver.FamilyName,
+            8,
+            XFontStyleEx.Regular);
+        var headerFont = new XFont(
+            PortalFontResolver.FamilyName,
+            7,
+            XFontStyleEx.Bold);
+        var bodyFont = new XFont(
+            PortalFontResolver.FamilyName,
+            7,
+            XFontStyleEx.Regular);
         var pageNumber = 0;
         PdfPage? page = null;
         XGraphics? graphics = null;
@@ -261,10 +273,7 @@ public sealed class ReportExportService
                 return;
             }
 
-            if (OperatingSystem.IsWindows())
-            {
-                GlobalFontSettings.UseWindowsFontsUnderWindows = true;
-            }
+            GlobalFontSettings.FontResolver = new PortalFontResolver();
 
             fontSettingsConfigured = true;
         }
