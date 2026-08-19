@@ -9,31 +9,31 @@
         <input asp-for="EditStaff.Id" type="hidden" data-field="Id" />
         <input asp-for="EditStaff.Version" type="hidden" data-field="Version" />
     }
-    <div class="col-md-4"><label class="form-label">Staff number</label><input name="@(prefix + ".StaffNumber")" class="form-control" data-field="StaffNumber" /></div>
-    <div class="col-md-4"><label class="form-label">First name</label><input name="@(prefix + ".FirstName")" class="form-control" data-field="FirstName" /></div>
-    <div class="col-md-4"><label class="form-label">Middle name</label><input name="@(prefix + ".MiddleName")" class="form-control" data-field="MiddleName" /></div>
-    <div class="col-md-4"><label class="form-label">Last name</label><input name="@(prefix + ".LastName")" class="form-control" data-field="LastName" /></div>
-    <div class="col-md-4"><label class="form-label">Designation</label><input name="@(prefix + ".Designation")" class="form-control" data-field="Designation" /></div>
-    <div class="col-md-4"><label class="form-label">Department</label><input name="@(prefix + ".Department")" class="form-control" data-field="Department" /></div>
-    <div class="col-md-4"><label class="form-label">Employment type</label><input name="@(prefix + ".EmploymentType")" class="form-control" data-field="EmploymentType" /></div>
-    <div class="col-md-4"><label class="form-label">Date of joining</label><input name="@(prefix + ".DateOfJoining")" class="form-control" type="date" data-field="DateOfJoining" /></div>
-    <div class="col-md-4"><label class="form-label">Phone</label><input name="@(prefix + ".Phone")" class="form-control" data-field="Phone" /></div>
-    <div class="col-md-4"><label class="form-label">Alternate phone</label><input name="@(prefix + ".AlternatePhone")" class="form-control" data-field="AlternatePhone" /></div>
-    <div class="col-md-4"><label class="form-label">Email</label><input name="@(prefix + ".Email")" class="form-control" type="email" data-field="Email" /></div>
+    <div class="col-md-4"><label class="form-label" for="@(prefix)_StaffNumber">Staff number</label><input id="@(prefix)_StaffNumber" name="@(prefix + ".StaffNumber")" class="form-control" data-field="StaffNumber" required maxlength="50" autocomplete="off" /></div>
+    <div class="col-md-4"><label class="form-label" for="@(prefix)_FirstName">First name</label><input id="@(prefix)_FirstName" name="@(prefix + ".FirstName")" class="form-control" data-field="FirstName" required maxlength="100" autocomplete="given-name" /></div>
+    <div class="col-md-4"><label class="form-label" for="@(prefix)_MiddleName">Middle name</label><input id="@(prefix)_MiddleName" name="@(prefix + ".MiddleName")" class="form-control" data-field="MiddleName" maxlength="100" autocomplete="additional-name" /></div>
+    <div class="col-md-4"><label class="form-label" for="@(prefix)_LastName">Last name</label><input id="@(prefix)_LastName" name="@(prefix + ".LastName")" class="form-control" data-field="LastName" required maxlength="100" autocomplete="family-name" /></div>
+    <div class="col-md-4"><label class="form-label" for="@(prefix)_Designation">Designation</label><input id="@(prefix)_Designation" name="@(prefix + ".Designation")" class="form-control" data-field="Designation" required maxlength="150" /></div>
+    <div class="col-md-4"><label class="form-label" for="@(prefix)_Department">Department</label><input id="@(prefix)_Department" name="@(prefix + ".Department")" class="form-control" data-field="Department" maxlength="150" /></div>
+    <div class="col-md-4"><label class="form-label" for="@(prefix)_EmploymentType">Employment type</label><input id="@(prefix)_EmploymentType" name="@(prefix + ".EmploymentType")" class="form-control" data-field="EmploymentType" maxlength="80" /></div>
+    <div class="col-md-4"><label class="form-label" for="@(prefix)_DateOfJoining">Date of joining</label><input id="@(prefix)_DateOfJoining" name="@(prefix + ".DateOfJoining")" class="form-control" type="date" data-field="DateOfJoining" /></div>
+    <div class="col-md-4"><label class="form-label" for="@(prefix)_Phone">Phone</label><input id="@(prefix)_Phone" name="@(prefix + ".Phone")" class="form-control" data-field="Phone" required maxlength="30" type="tel" inputmode="tel" autocomplete="tel" /></div>
+    <div class="col-md-4"><label class="form-label" for="@(prefix)_AlternatePhone">Alternate phone</label><input id="@(prefix)_AlternatePhone" name="@(prefix + ".AlternatePhone")" class="form-control" data-field="AlternatePhone" maxlength="30" type="tel" inputmode="tel" /></div>
+    <div class="col-md-4"><label class="form-label" for="@(prefix)_Email">Email</label><input id="@(prefix)_Email" name="@(prefix + ".Email")" class="form-control" type="email" data-field="Email" maxlength="254" autocomplete="email" /></div>
     <input name="@(prefix + ".PortalUserId")" type="hidden" data-field="PortalUserId" />
-    <div class="col-12"><label class="form-label">Address</label><textarea name="@(prefix + ".Address")" class="form-control" rows="2" data-field="Address"></textarea></div>
-    <div class="col-md-4"><label class="form-label">City</label><input name="@(prefix + ".City")" class="form-control" data-field="City" /></div>
+    <div class="col-12"><label class="form-label" for="@(prefix)_Address">Address</label><textarea id="@(prefix)_Address" name="@(prefix + ".Address")" class="form-control" rows="2" data-field="Address" required maxlength="1000" autocomplete="street-address"></textarea></div>
+    <div class="col-md-4"><label class="form-label" for="@(prefix)_City">City</label><input id="@(prefix)_City" name="@(prefix + ".City")" class="form-control" data-field="City" required maxlength="100" autocomplete="address-level2" /></div>
     <div class="col-md-4">
-        <label class="form-label">State</label>
-        <select name="@(prefix + ".State")" class="form-select" data-field="State">
+        <label class="form-label" for="@(prefix)_State">State</label>
+        <select name="@(prefix + ".State")" id="@(prefix)_State" class="form-select" data-field="State" required autocomplete="address-level1">
             <partial name="_IndiaStateOptions" />
         </select>
     </div>
-    <div class="col-md-4"><label class="form-label">Postal code</label><input name="@(prefix + ".PostalCode")" class="form-control" data-field="PostalCode" /></div>
-    <div class="col-md-6"><label class="form-label">Emergency contact</label><input name="@(prefix + ".EmergencyContactName")" class="form-control" data-field="EmergencyContactName" /></div>
-    <div class="col-md-6"><label class="form-label">Emergency phone</label><input name="@(prefix + ".EmergencyContactPhone")" class="form-control" data-field="EmergencyContactPhone" /></div>
+    <div class="col-md-4"><label class="form-label" for="@(prefix)_PostalCode">Postal code</label><input id="@(prefix)_PostalCode" name="@(prefix + ".PostalCode")" class="form-control" data-field="PostalCode" required maxlength="20" inputmode="numeric" autocomplete="postal-code" /></div>
+    <div class="col-md-6"><label class="form-label" for="@(prefix)_EmergencyContactName">Emergency contact</label><input id="@(prefix)_EmergencyContactName" name="@(prefix + ".EmergencyContactName")" class="form-control" data-field="EmergencyContactName" maxlength="200" /></div>
+    <div class="col-md-6"><label class="form-label" for="@(prefix)_EmergencyContactPhone">Emergency phone</label><input id="@(prefix)_EmergencyContactPhone" name="@(prefix + ".EmergencyContactPhone")" class="form-control" data-field="EmergencyContactPhone" maxlength="30" type="tel" inputmode="tel" /></div>
     @if (editing)
     {
-        <div class="col-12 form-check ms-2"><input name="EditStaff.IsActive" value="true" class="form-check-input" type="checkbox" data-field="IsActive" /><input name="EditStaff.IsActive" value="false" type="hidden" /><label class="form-check-label">Active staff member</label></div>
+        <div class="col-12 form-check ms-2"><input id="EditStaff_IsActive" name="EditStaff.IsActive" value="true" class="form-check-input" type="checkbox" data-field="IsActive" /><input name="EditStaff.IsActive" value="false" type="hidden" /><label class="form-check-label" for="EditStaff_IsActive">Active staff member</label></div>
     }
 </div>

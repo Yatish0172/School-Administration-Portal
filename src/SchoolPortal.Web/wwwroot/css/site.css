@@ -897,3 +897,153 @@ body {
 .setup-action[open] summary {
   margin-bottom: .25rem;
 }
+
+/* Administration: user access */
+.status-warning {
+  background: #fff4dc;
+  color: #8a5700;
+}
+
+.administration-heading {
+  align-items: center;
+}
+
+.access-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.2rem;
+}
+
+.access-summary-card {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--portal-border);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.access-summary-card span {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--portal-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.access-summary-card strong {
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.access-panel-heading {
+  align-items: center;
+  border-bottom: 1px solid var(--portal-border);
+}
+
+.access-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(240px, 2fr) minmax(180px, 1fr) minmax(150px, 0.8fr) auto auto;
+  align-items: end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--portal-border);
+  background: #fbfcfe;
+}
+
+.access-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 13rem;
+}
+
+.access-avatar {
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 0.7rem;
+  background: #e9f0ff;
+  color: var(--portal-blue);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.access-user-disabled {
+  color: var(--portal-muted);
+  background: #fafbfc;
+}
+
+.access-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.access-form-intro,
+.access-modal-username {
+  color: var(--portal-muted);
+  font-size: 0.86rem;
+}
+
+.access-callout {
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #cfe0ff;
+  border-radius: 0.7rem;
+  background: #f3f7ff;
+  color: #244573;
+  font-size: 0.82rem;
+}
+
+.access-status-choice {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem;
+  border: 1px solid var(--portal-border);
+  border-radius: 0.75rem;
+}
+
+.access-status-choice strong,
+.access-status-choice span {
+  display: block;
+}
+
+.access-status-choice span {
+  margin-top: 0.15rem;
+  color: var(--portal-muted);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 991px) {
+  .access-filter-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .access-filter-search {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 767px) {
+  .access-summary,
+  .access-filter-bar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .access-filter-search {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .access-summary,
+  .access-filter-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .access-filter-search {
+    grid-column: span 1;
+  }
+}

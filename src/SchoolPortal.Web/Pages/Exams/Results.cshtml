@@ -43,7 +43,7 @@
                 }
             </select>
         </div>
-        <div class="col-lg-2"><button class="btn btn-primary w-100">Review</button></div>
+        <div class="col-lg-2"><button type="submit" class="btn btn-primary w-100">Review</button></div>
     </form>
 </section>
 
@@ -66,7 +66,7 @@
             <form method="post" asp-page-handler="Publish" class="mt-3">
                 <input type="hidden" name="id" value="@Model.SelectedExamination.Id" />
                 <input type="hidden" asp-for="SectionId" />
-                <button class="btn btn-success" disabled="@(Model.MissingMarks != 0)">Publish and lock results</button>
+                <button type="submit" class="btn btn-success" disabled="@(Model.MissingMarks != 0)">Publish and lock results</button>
             </form>
         }
         else if (Model.CanPublish && Model.SelectedExamination.Status == ExaminationStatus.Published)
@@ -75,7 +75,7 @@
                 <input type="hidden" name="id" value="@Model.SelectedExamination.Id" />
                 <input type="hidden" asp-for="SectionId" />
                 <div class="col-lg-8"><input asp-for="ReopenReason" class="form-control" required minlength="5" placeholder="Reason for reopening published results" /></div>
-                <div class="col-lg-4"><button class="btn btn-outline-danger w-100">Reopen for correction</button></div>
+                <div class="col-lg-4"><button type="submit" class="btn btn-outline-danger w-100">Reopen for correction</button></div>
             </form>
         }
     </section>

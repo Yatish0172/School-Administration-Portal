@@ -60,6 +60,10 @@
             {
                 <a asp-page="/Reports/Index" class="module-state module-link">Open reporting centre →</a>
             }
+            else if (module.IsGranted && module.Name == "Administration")
+            {
+                <a asp-page="/Administration/Index" class="module-state module-link">Manage users and access →</a>
+            }
             else
             {
                 <span class="module-state">Feature transfer scheduled by implementation phase</span>

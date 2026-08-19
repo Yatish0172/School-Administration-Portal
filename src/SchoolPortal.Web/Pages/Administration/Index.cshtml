@@ -1,0 +1,162 @@
+@page
+@model SchoolPortal.Web.Pages.Administration.IndexModel
+@{
+    ViewData["Title"] = "Administration";
+}
+
+<div class="page-heading administration-heading">
+    <div>
+        <p class="eyebrow">Administration</p>
+        <h1>User access</h1>
+        <p>Add individual portal accounts and control what each person can access.</p>
+    </div>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">Add new user</button>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success feedback-toast" data-auto-dismiss="5000">@Model.StatusMessage</div>
+}
+<div asp-validation-summary="All" class="alert alert-danger feedback-toast" data-auto-dismiss="8000"></div>
+
+<section class="access-summary" aria-label="User account summary">
+    <div class="access-summary-card"><span>All users</span><strong>@Model.TotalUsers</strong></div>
+    <div class="access-summary-card"><span>Active</span><strong>@Model.ActiveUsers</strong></div>
+    <div class="access-summary-card"><span>Administrators</span><strong>@Model.AdministratorUsers</strong></div>
+    <div class="access-summary-card"><span>Disabled</span><strong>@Model.DisabledUsers</strong></div>
+</section>
+
+<section class="data-panel access-panel">
+    <div class="panel-heading access-panel-heading">
+        <div><h2>Portal users</h2><p>Access is assigned by role. Changes end that user's existing sessions.</p></div>
+        <a asp-page="/Staff/Index" class="btn btn-outline-primary btn-sm">Open staff directory</a>
+    </div>
+
+    <form method="get" class="access-filter-bar">
+        <div class="access-filter-search">
+            <label asp-for="Search" class="form-label">Search users</label>
+            <input asp-for="Search" class="form-control" placeholder="Name or username" />
+        </div>
+        <div>
+            <label asp-for="Role" class="form-label">Role</label>
+            <select asp-for="Role" class="form-select">
+                <option value="">All roles</option>
+                @foreach (var role in Model.Roles) { <option value="@role.Name">@role.Name</option> }
+            </select>
+        </div>
+        <div>
+            <label asp-for="Status" class="form-label">Status</label>
+            <select asp-for="Status" class="form-select">
+                <option value="">All statuses</option><option value="active">Active</option><option value="disabled">Disabled</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-outline-primary">Apply filters</button>
+        @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.Role) || !string.IsNullOrWhiteSpace(Model.Status))
+        {
+            <a asp-page="/Administration/Index" class="btn btn-link">Clear</a>
+        }
+    </form>
+
+    <div class="table-responsive">
+        <table class="table align-middle access-table">
+            <thead><tr><th>User</th><th>Access level</th><th>Last sign-in</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+            @foreach (var user in Model.Users)
+            {
+                <tr class="@(user.IsActive ? null : "access-user-disabled")">
+                    <td>
+                        <div class="access-user-cell">
+                            <span class="access-avatar" aria-hidden="true">@user.Initials</span>
+                            <div><strong>@user.DisplayName</strong><div class="table-subtext">@@@user.Username</div></div>
+                        </div>
+                    </td>
+                    <td><strong>@user.Role</strong><div class="table-subtext">@user.RoleSummary</div></td>
+                    <td>
+                        @if (user.LastLoginAtUtc.HasValue)
+                        {
+                            <time datetime="@user.LastLoginAtUtc.Value.ToString("O")">@user.LastLoginAtUtc.Value.ToLocalTime().ToString("dd MMM yyyy, h:mm tt")</time>
+                        }
+                        else { <span class="text-muted">Never</span> }
+                    </td>
+                    <td>
+                        @if (user.IsLocked) { <span class="status-pill status-warning">Locked</span> }
+                        else if (user.IsActive) { <span class="status-pill status-active">Active</span> }
+                        else { <span class="status-pill">Disabled</span> }
+                    </td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-outline-primary manage-access-button"
+                                data-bs-toggle="modal" data-bs-target="#manageAccessModal"
+                                data-user-id="@user.Id" data-display-name="@user.DisplayName" data-username="@user.Username"
+                                data-role="@user.Role" data-active="@user.IsActive.ToString().ToLowerInvariant()">Manage access</button>
+                    </td>
+                </tr>
+            }
+            @if (Model.Users.Count == 0) { <tr><td colspan="5" class="empty-cell">No users match these filters.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="add-user-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+        <form method="post" asp-page-handler="Create">
+            <div class="modal-header">
+                <div><p class="eyebrow mb-1">New portal account</p><h2 class="modal-title fs-5" id="add-user-title">Add a new user</h2></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body access-form">
+                <p class="access-form-intro">Create one account per person so activity in the audit log stays attributable.</p>
+                <div><label asp-for="NewUser.DisplayName" class="form-label"></label><input asp-for="NewUser.DisplayName" class="form-control" autocomplete="name" /><span asp-validation-for="NewUser.DisplayName" class="text-danger"></span></div>
+                <div><label asp-for="NewUser.Username" class="form-label"></label><input asp-for="NewUser.Username" class="form-control" autocomplete="off" /><div class="form-text">Letters, numbers, dot, underscore, or hyphen.</div><span asp-validation-for="NewUser.Username" class="text-danger"></span></div>
+                <div><label asp-for="NewUser.Email" class="form-label"></label><input asp-for="NewUser.Email" class="form-control" autocomplete="email" /><span asp-validation-for="NewUser.Email" class="text-danger"></span></div>
+                <div>
+                    <label asp-for="NewUser.Role" class="form-label"></label>
+                    <select asp-for="NewUser.Role" class="form-select">
+                        @foreach (var role in Model.Roles) { <option value="@role.Name">@role.Name — @role.Summary</option> }
+                    </select>
+                    <span asp-validation-for="NewUser.Role" class="text-danger"></span>
+                </div>
+                <div><label asp-for="NewUser.Password" class="form-label">Temporary password</label><input asp-for="NewUser.Password" class="form-control" autocomplete="new-password" /><div class="form-text">At least 8 characters with uppercase, lowercase, and a number.</div><span asp-validation-for="NewUser.Password" class="text-danger"></span></div>
+                <div><label asp-for="NewUser.ConfirmPassword" class="form-label"></label><input asp-for="NewUser.ConfirmPassword" class="form-control" autocomplete="new-password" /><span asp-validation-for="NewUser.ConfirmPassword" class="text-danger"></span></div>
+                <div class="access-callout">The user must choose a new password the first time they sign in.</div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Create user</button></div>
+        </form>
+    </div></div>
+</div>
+
+<div class="modal fade" id="manageAccessModal" tabindex="-1" aria-labelledby="manage-access-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form method="post" asp-page-handler="UpdateAccess">
+            <div class="modal-header">
+                <div><p class="eyebrow mb-1">Account permissions</p><h2 class="modal-title fs-5" id="manage-access-title">Manage access</h2><p class="access-modal-username mb-0" id="manage-access-username"></p></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body access-form">
+                <input asp-for="EditAccess.UserId" type="hidden" />
+                <div>
+                    <label asp-for="EditAccess.Role" class="form-label">Access level</label>
+                    <select asp-for="EditAccess.Role" class="form-select">
+                        @foreach (var role in Model.Roles) { <option value="@role.Name">@role.Name — @role.Summary</option> }
+                    </select>
+                    <span asp-validation-for="EditAccess.Role" class="text-danger"></span>
+                </div>
+                <div class="access-status-choice">
+                    <div><strong>Allow sign-in</strong><span>Turn this off to disable the account without deleting its history.</span></div>
+                    <div class="form-check form-switch"><input asp-for="EditAccess.IsActive" class="form-check-input" role="switch" /></div>
+                </div>
+                <div class="access-callout">Saving an access change signs this user out on their other devices.</div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save access</button></div>
+        </form>
+    </div></div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/administration-users.js" asp-append-version="true"></script>
+    @if (!string.IsNullOrWhiteSpace(Model.OpenModal))
+    {
+        <script>window.portalAdministrationModal = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.OpenModal));</script>
+    }
+}

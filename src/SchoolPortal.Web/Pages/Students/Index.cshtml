@@ -107,11 +107,15 @@
     {
         <nav class="pager" aria-label="Student pages">
             <a class="btn btn-sm btn-outline-secondary @(Model.PageNumber == 1 ? "disabled" : null)"
+               aria-disabled="@(Model.PageNumber == 1 ? "true" : "false")"
+               tabindex="@(Model.PageNumber == 1 ? "-1" : "0")"
                asp-route-Search="@Model.Search" asp-route-Status="@Model.Status"
                asp-route-ClassId="@Model.ClassId" asp-route-SectionId="@Model.SectionId"
                asp-route-PageNumber="@(Model.PageNumber - 1)">Previous</a>
             <span>Page @Model.PageNumber of @Model.TotalPages</span>
             <a class="btn btn-sm btn-outline-secondary @(Model.PageNumber == Model.TotalPages ? "disabled" : null)"
+               aria-disabled="@(Model.PageNumber == Model.TotalPages ? "true" : "false")"
+               tabindex="@(Model.PageNumber == Model.TotalPages ? "-1" : "0")"
                asp-route-Search="@Model.Search" asp-route-Status="@Model.Status"
                asp-route-ClassId="@Model.ClassId" asp-route-SectionId="@Model.SectionId"
                asp-route-PageNumber="@(Model.PageNumber + 1)">Next</a>

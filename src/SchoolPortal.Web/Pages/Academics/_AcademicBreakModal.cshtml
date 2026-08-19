@@ -12,7 +12,7 @@
                 <form method="post" asp-page-handler="@handler">
                     <div class="modal-header">
                         <h2 class="modal-title fs-5">@(editing ? "Edit Lunch or Break" : "Add Lunch or Break")</h2>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     @if (editing)
                     {
@@ -48,7 +48,7 @@
                     }
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button class="btn btn-primary">@(editing ? "Save Break" : "Add Break")</button>
+                        <button type="submit" class="btn btn-primary">@(editing ? "Save Break" : "Add Break")</button>
                     </div>
                 </form>
             </div>
