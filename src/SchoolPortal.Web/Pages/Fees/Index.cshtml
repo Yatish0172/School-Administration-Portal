@@ -7,8 +7,8 @@
 <section class="page-heading">
     <div>
         <p class="eyebrow">Fees and collections</p>
-        <h1>Fee setup</h1>
-        <p>Configure fee heads and scheduled class plans, then assign charges to students.</p>
+        <h1>Fee structure</h1>
+        <p>Set up fee categories, build a class fee structure, and assign it to students.</p>
     </div>
     <div class="record-actions">
         <a asp-page="/Fees/Ledger" class="btn btn-primary">Student ledger</a>
@@ -18,6 +18,8 @@
         }
     </div>
 </section>
+
+<partial name="_FeesNav" />
 
 @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
 {
@@ -29,8 +31,9 @@
     <section class="data-panel">
         <div class="panel-heading">
             <div>
-                <h2>Fee heads</h2>
-                <p>The reusable categories shown on charges and receipts.</p>
+                <span class="setup-step">Step 1</span>
+                <h2>Fee categories</h2>
+                <p>Create reusable categories such as Tuition, Transport, or Annual Charges.</p>
             </div>
         </div>
         <div class="table-responsive">
@@ -39,7 +42,7 @@
                 <tbody>
                 @if (Model.Heads.Count == 0)
                 {
-                    <tr><td colspan="4" class="empty-cell">No fee heads configured.</td></tr>
+                    <tr><td colspan="4" class="empty-cell">No fee categories configured.</td></tr>
                 }
                 else
                 {
@@ -58,22 +61,25 @@
         </div>
         @if (Model.CanConfigure)
         {
-            <form method="post" asp-page-handler="CreateHead" class="form-grid panel-heading-border pt-3">
+            <details class="setup-action panel-heading-border">
+                <summary>Add a fee category</summary>
+            <form method="post" asp-page-handler="CreateHead" class="form-grid pt-3">
                 <div><label asp-for="NewHead.Code" class="form-label"></label><input asp-for="NewHead.Code" class="form-control" /></div>
                 <div><label asp-for="NewHead.Name" class="form-label"></label><input asp-for="NewHead.Name" class="form-control" /></div>
                 <div class="form-span-2"><label asp-for="NewHead.Description" class="form-label"></label><input asp-for="NewHead.Description" class="form-control" /></div>
                 <div><label asp-for="NewHead.SortOrder" class="form-label"></label><input asp-for="NewHead.SortOrder" class="form-control" /></div>
                 <div class="d-flex align-items-end gap-3">
                     <label class="form-check"><input asp-for="NewHead.IsRefundable" class="form-check-input" /> Refundable</label>
-                    <button type="submit" class="btn btn-primary ms-auto">Add fee head</button>
+                    <button type="submit" class="btn btn-primary ms-auto">Save category</button>
                 </div>
             </form>
+            </details>
         }
     </section>
 
     <section class="data-panel">
         <div class="panel-heading">
-            <div><h2>Fee plans</h2><p>Year- and class-specific schedules that preserve their original amounts.</p></div>
+            <div><span class="setup-step">Step 2</span><h2>Class fee structures</h2><p>Choose an academic year and class, then create its fee schedule.</p></div>
         </div>
         <div class="table-responsive">
             <table class="table align-middle">
@@ -81,7 +87,7 @@
                 <tbody>
                 @if (Model.Plans.Count == 0)
                 {
-                    <tr><td colspan="5" class="empty-cell">No fee plans configured.</td></tr>
+                    <tr><td colspan="5" class="empty-cell">No class fee structures configured.</td></tr>
                 }
                 else
                 {
@@ -101,7 +107,9 @@
         </div>
         @if (Model.CanConfigure)
         {
-            <form method="post" asp-page-handler="CreatePlan" class="form-grid panel-heading-border pt-3">
+            <details class="setup-action panel-heading-border">
+                <summary>Create a class fee structure</summary>
+            <form method="post" asp-page-handler="CreatePlan" class="form-grid pt-3">
                 <div>
                     <label asp-for="NewPlan.AcademicYearId" class="form-label">Academic year</label>
                     <select asp-for="NewPlan.AcademicYearId" class="form-select">
@@ -117,8 +125,9 @@
                     </select>
                 </div>
                 <div><label asp-for="NewPlan.Name" class="form-label"></label><input asp-for="NewPlan.Name" class="form-control" placeholder="Standard annual plan" /></div>
-                <div class="d-flex align-items-end justify-content-end"><button type="submit" class="btn btn-primary">Create plan</button></div>
+                <div class="d-flex align-items-end justify-content-end"><button type="submit" class="btn btn-primary">Create structure</button></div>
             </form>
+            </details>
         }
     </section>
 
@@ -127,17 +136,18 @@
         <section class="data-panel">
             <div class="panel-heading">
                 <div>
-                    <h2>@Model.SelectedPlan.Name</h2>
-                    <p>@Model.SelectedPlan.AcademicYear.Name · @Model.SelectedPlan.Class.Name</p>
+                    <span class="setup-step">Step 3</span>
+                    <h2>Add installments and assign</h2>
+                    <p><strong>@Model.SelectedPlan.Name</strong> · @Model.SelectedPlan.AcademicYear.Name · @Model.SelectedPlan.Class.Name</p>
                 </div>
             </div>
             <div class="table-responsive">
                 <table class="table align-middle">
-                    <thead><tr><th>Fee head</th><th>Period</th><th>Due</th><th>Amount</th></tr></thead>
+                    <thead><tr><th>Fee category</th><th>Installment / period</th><th>Due date</th><th>Amount</th></tr></thead>
                     <tbody>
                     @if (Model.SelectedPlan.Items.Count == 0)
                     {
-                        <tr><td colspan="4" class="empty-cell">No scheduled charges in this plan.</td></tr>
+                        <tr><td colspan="4" class="empty-cell">No installments added to this structure.</td></tr>
                     }
                     else
                     {
@@ -154,21 +164,21 @@
                 <form method="post" asp-page-handler="AddItem" class="form-grid form-grid-4 panel-heading-border pt-3">
                     <input asp-for="NewItem.FeePlanId" type="hidden" value="@Model.SelectedPlan.Id" />
                     <div>
-                        <label asp-for="NewItem.FeeHeadId" class="form-label">Fee head</label>
+                        <label asp-for="NewItem.FeeHeadId" class="form-label">Fee category</label>
                         <select asp-for="NewItem.FeeHeadId" class="form-select">
-                            <option value="">Choose head</option>
+                            <option value="">Choose category</option>
                             @foreach (var head in Model.Heads.Where(x => x.IsActive)) { <option value="@head.Id">@head.Name</option> }
                         </select>
                     </div>
                     <div><label asp-for="NewItem.Period" class="form-label"></label><input asp-for="NewItem.Period" class="form-control" placeholder="April 2026" /></div>
                     <div><label asp-for="NewItem.DueDate" class="form-label">Due date</label><input asp-for="NewItem.DueDate" class="form-control" type="date" /></div>
                     <div><label asp-for="NewItem.Amount" class="form-label"></label><input asp-for="NewItem.Amount" class="form-control" type="number" min="0.01" step="0.01" /></div>
-                    <div class="form-span-2"><button type="submit" class="btn btn-primary">Add scheduled charge</button></div>
+                    <div class="form-span-2"><button type="submit" class="btn btn-primary">Add installment</button></div>
                 </form>
                 <form method="post" asp-page-handler="Assign" class="filter-bar">
                     <input type="hidden" name="planId" value="@Model.SelectedPlan.Id" />
                     <div class="filter-search">
-                        <label for="sectionId" class="form-label">Assign plan to active students in section</label>
+                        <label for="sectionId" class="form-label">Assign this structure to active students in section</label>
                         <select id="sectionId" name="sectionId" class="form-select" required>
                             <option value="">Choose section</option>
                             @foreach (var sectionItem in Model.Sections) { <option value="@sectionItem.Id">@sectionItem.Name</option> }

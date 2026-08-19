@@ -18,3 +18,5 @@ TestResults/
 # Local configuration and secrets
 appsettings.Local.json
 .env
+desktop-publish/
+/*.exe

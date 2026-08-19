@@ -22,6 +22,9 @@ public sealed class LedgerModel(
     [BindProperty(SupportsGet = true)]
     public Guid? EnrollmentId { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public string? StudentQuery { get; set; }
+
     [BindProperty]
     public DirectChargeInput NewCharge { get; set; } = new();
 
@@ -272,20 +275,47 @@ public sealed class LedgerModel(
 
     private async Task LoadAsync(CancellationToken cancellationToken)
     {
-        Enrollments = await dbContext.Set<StudentEnrollment>()
+        var enrollmentQuery = dbContext.Set<StudentEnrollment>()
             .AsNoTracking()
-            .Where(x => x.Status == EnrollmentStatus.Active)
+            .Where(x =>
+                x.Status == EnrollmentStatus.Active
+                && x.Student.Status == StudentStatus.Active)
             .Include(x => x.Student)
             .Include(x => x.AcademicYear)
             .Include(x => x.Class)
-            .Include(x => x.Section)
-            .OrderByDescending(x => x.AcademicYear.IsCurrent)
-            .ThenBy(x => x.Class.SortOrder)
-            .ThenBy(x => x.Section.Name)
-            .ThenBy(x => x.Student.AdmissionNumber)
-            .Take(1000)
-            .ToListAsync(cancellationToken);
-        SelectedEnrollment = Enrollments.FirstOrDefault(x => x.Id == EnrollmentId);
+            .Include(x => x.Section);
+
+        SelectedEnrollment = EnrollmentId.HasValue
+            ? await enrollmentQuery.SingleOrDefaultAsync(
+                x => x.Id == EnrollmentId.Value,
+                cancellationToken)
+            : null;
+
+        var search = StudentQuery?.Trim();
+        if (!string.IsNullOrWhiteSpace(search) && search.Length >= 2)
+        {
+            var pattern = $"%{search}%";
+            Enrollments = await enrollmentQuery
+                .Where(x =>
+                    EF.Functions.ILike(x.Student.AdmissionNumber, pattern)
+                    || EF.Functions.ILike(x.Student.FirstName, pattern)
+                    || (x.Student.MiddleName != null
+                        && EF.Functions.ILike(x.Student.MiddleName, pattern))
+                    || EF.Functions.ILike(x.Student.LastName, pattern)
+                    || EF.Functions.ILike(
+                        x.Student.FirstName + " " + x.Student.LastName,
+                        pattern))
+                .OrderByDescending(x => x.AcademicYear.IsCurrent)
+                .ThenBy(x => x.Student.FirstName)
+                .ThenBy(x => x.Student.LastName)
+                .ThenBy(x => x.Student.AdmissionNumber)
+                .Take(20)
+                .ToListAsync(cancellationToken);
+        }
+        else
+        {
+            Enrollments = SelectedEnrollment is null ? [] : [SelectedEnrollment];
+        }
         Heads = await dbContext.Set<FeeHead>()
             .AsNoTracking()
             .Where(x => x.IsActive)

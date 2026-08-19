@@ -41,6 +41,8 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<SchoolPortalDbContext>()
             .AddSignInManager();
 
+        services.AddScoped<TeacherAccountProvisioner>();
+
         services
             .AddHealthChecks()
             .AddDbContextCheck<SchoolPortalDbContext>(

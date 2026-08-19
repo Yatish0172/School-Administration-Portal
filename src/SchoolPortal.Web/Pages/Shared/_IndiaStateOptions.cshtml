@@ -1,0 +1,13 @@
+<option value="">Choose state or union territory</option>
+<optgroup label="States">
+    @foreach (var state in IndiaAdministrativeAreas.States)
+    {
+        <option value="@state">@state</option>
+    }
+</optgroup>
+<optgroup label="Union territories">
+    @foreach (var territory in IndiaAdministrativeAreas.UnionTerritories)
+    {
+        <option value="@territory">@territory</option>
+    }
+</optgroup>

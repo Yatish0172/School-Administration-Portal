@@ -3,6 +3,7 @@ using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
 using System.Globalization;
+using System.Text;
 
 namespace SchoolPortal.Web.Reporting;
 
@@ -107,6 +108,27 @@ public sealed class ReportExportService
         return stream.ToArray();
     }
 
+    public byte[] ToCsv(ReportData report)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine(string.Join(
+            ',',
+            report.Definition.Columns.Select(column => Csv(column.Label))));
+        foreach (var row in report.Rows)
+        {
+            builder.AppendLine(string.Join(
+                ',',
+                report.Definition.Columns.Select(column =>
+                {
+                    row.TryGetValue(column.Key, out var value);
+                    return Csv(Format(value, column.Kind));
+                })));
+        }
+
+        return new UTF8Encoding(encoderShouldEmitUTF8Identifier: true)
+            .GetBytes(builder.ToString());
+    }
+
     public byte[] ToPdf(ReportData report)
     {
         ConfigureFonts();
@@ -119,10 +141,22 @@ public sealed class ReportExportService
                 Subject = "School Administration Portal report export",
             },
         };
-        var titleFont = new XFont("Arial", 16, XFontStyleEx.Bold);
-        var metaFont = new XFont("Arial", 8, XFontStyleEx.Regular);
-        var headerFont = new XFont("Arial", 7, XFontStyleEx.Bold);
-        var bodyFont = new XFont("Arial", 7, XFontStyleEx.Regular);
+        var titleFont = new XFont(
+            PortalFontResolver.FamilyName,
+            16,
+            XFontStyleEx.Bold);
+        var metaFont = new XFont(
+            PortalFontResolver.FamilyName,
+            8,
+            XFontStyleEx.Regular);
+        var headerFont = new XFont(
+            PortalFontResolver.FamilyName,
+            7,
+            XFontStyleEx.Bold);
+        var bodyFont = new XFont(
+            PortalFontResolver.FamilyName,
+            7,
+            XFontStyleEx.Regular);
         var pageNumber = 0;
         PdfPage? page = null;
         XGraphics? graphics = null;
@@ -239,10 +273,7 @@ public sealed class ReportExportService
                 return;
             }
 
-            if (OperatingSystem.IsWindows())
-            {
-                GlobalFontSettings.UseWindowsFontsUnderWindows = true;
-            }
+            GlobalFontSettings.FontResolver = new PortalFontResolver();
 
             fontSettingsConfigured = true;
         }
@@ -380,6 +411,18 @@ public sealed class ReportExportService
                 page.Width.Point - margin * 2,
                 12),
             XStringFormats.TopRight);
+    }
+
+    private static string Csv(string value)
+    {
+        var safe = value;
+        if (safe.Length > 0 && safe[0] is '=' or '+' or '-' or '@')
+        {
+            safe = "'" + safe;
+        }
+
+        var quote = ((char)34).ToString();
+        return quote + safe.Replace(quote, quote + quote) + quote;
     }
 
     private static string Format(object? value, ReportValueKind kind) =>

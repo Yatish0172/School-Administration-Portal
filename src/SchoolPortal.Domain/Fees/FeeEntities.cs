@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using SchoolPortal.Domain.Academics;
 using SchoolPortal.Domain.Students;
 
@@ -6,11 +7,21 @@ namespace SchoolPortal.Domain.Fees;
 public enum FeePaymentMode
 {
     Cash = 1,
+
     Cheque = 2,
+
+    [Display(Name = "UPI")]
     Upi = 3,
+
+    [Display(Name = "Bank transfer")]
     BankTransfer = 4,
+
     Card = 5,
+
+    [Display(Name = "Demand draft")]
     DemandDraft = 6,
+
+    Other = 7,
 }
 
 public enum StudentChargeStatus

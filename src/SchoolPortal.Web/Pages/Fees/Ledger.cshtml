@@ -7,17 +7,13 @@
 <section class="page-heading">
     <div>
         <p class="eyebrow">Fees and collections</p>
-        <h1>Student ledger</h1>
-        <p>Review charges, concessions, payments, balances, and immutable reversals.</p>
+        <h1>Collect payment</h1>
+        <p>Find a student, review the balance, record payment, and issue a receipt.</p>
     </div>
-    <div class="record-actions">
-        <a asp-page="/Fees/Index" class="btn btn-outline-primary">Fee setup</a>
-        @if (User.HasClaim(PermissionCatalog.ClaimType, PermissionCatalog.Fees.Reports))
-        {
-            <a asp-page="/Fees/Reports" class="btn btn-outline-primary">Reports</a>
-        }
-    </div>
+    <a asp-page="/Fees/Register" class="btn btn-outline-primary">Payment register</a>
 </section>
+
+<partial name="_FeesNav" />
 
 @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
 {
@@ -25,35 +21,57 @@
 }
 <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
-<section class="data-panel mb-3">
-    <form method="get" class="filter-bar">
-        <div class="filter-search">
-            <label asp-for="EnrollmentId" class="form-label">Student enrollment</label>
-            <select asp-for="EnrollmentId" class="form-select">
-                <option value="">Choose student</option>
+<section class="data-panel mb-3 fee-search-panel">
+    <form method="get" class="fee-student-search">
+        <div>
+            <label asp-for="StudentQuery" class="form-label">Find student</label>
+            <input asp-for="StudentQuery"
+                   class="form-control form-control-lg"
+                   minlength="2"
+                   autocomplete="off"
+                   placeholder="Search by student name or admission number" />
+            <div class="form-text">Enter at least two letters or numbers.</div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Search</button>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StudentQuery) && Model.StudentQuery.Trim().Length >= 2)
+    {
+        <div class="student-search-results" aria-live="polite">
+            @if (Model.Enrollments.Count == 0)
+            {
+                <div class="empty-cell">No active students match "@Model.StudentQuery". Try a different name or admission number.</div>
+            }
+            else
+            {
                 @foreach (var enrollment in Model.Enrollments)
                 {
-                    <option value="@enrollment.Id">
-                        @enrollment.Student.AdmissionNumber · @enrollment.Student.FullName · @enrollment.Class.Name @enrollment.Section.Name · @enrollment.AcademicYear.Name
-                    </option>
+                    <a asp-page="/Fees/Ledger" asp-route-EnrollmentId="@enrollment.Id" class="student-search-result">
+                        <span><strong>@enrollment.Student.FullName</strong><small>@enrollment.Student.AdmissionNumber</small></span>
+                        <span>@enrollment.Class.Name @enrollment.Section.Name · @enrollment.AcademicYear.Name</span>
+                        <span>Open ledger →</span>
+                    </a>
                 }
-            </select>
+            }
         </div>
-        <button type="submit" class="btn btn-primary">Open ledger</button>
-    </form>
+    }
 </section>
 
 @if (Model.SelectedEnrollment is not null)
 {
     <section class="dashboard-hero mb-3">
         <div>
-            <p class="eyebrow">Selected student</p>
+            <p class="eyebrow">Student account</p>
             <h1>@Model.SelectedEnrollment.Student.FullName</h1>
             <p class="text-muted mb-0">@Model.SelectedEnrollment.Student.AdmissionNumber · @Model.SelectedEnrollment.Class.Name @Model.SelectedEnrollment.Section.Name · @Model.SelectedEnrollment.AcademicYear.Name</p>
         </div>
         <div class="text-end">
-            <div class="text-muted small">Outstanding balance</div>
+            <div class="text-muted small">Balance due</div>
             <div class="display-6 fw-bold">@Model.TotalOutstanding.ToString("N2")</div>
+            <div class="record-actions mt-2">
+                <a asp-page="/Fees/Invoice" asp-route-EnrollmentId="@Model.SelectedEnrollment.Id" class="btn btn-sm btn-outline-primary">Print fee invoice</a>
+                <a asp-page="/Fees/NoDues" asp-route-EnrollmentId="@Model.SelectedEnrollment.Id" class="btn btn-sm btn-outline-primary">No dues certificate</a>
+            </div>
         </div>
     </section>
 
@@ -97,7 +115,7 @@
     @if (Model.CanPost && Model.TotalOutstanding > 0)
     {
         <section class="data-panel mb-3">
-            <div class="panel-heading"><div><h2>Post payment</h2><p>The amount is allocated to the oldest outstanding charges first. Safe retries reuse the same key.</p></div></div>
+            <div class="panel-heading"><div><h2>Record payment</h2><p>Review the amount and payment details. It will be applied to the oldest unpaid fees first.</p></div></div>
             <form method="post" asp-page-handler="Payment" class="form-grid form-grid-4">
                 <input asp-for="Payment.StudentEnrollmentId" type="hidden" value="@Model.SelectedEnrollment.Id" />
                 <input asp-for="Payment.IdempotencyKey" type="hidden" />
@@ -106,19 +124,19 @@
                     <label asp-for="Payment.Mode" class="form-label"></label>
                     <select asp-for="Payment.Mode" asp-items="Html.GetEnumSelectList<SchoolPortal.Domain.Fees.FeePaymentMode>()" class="form-select"></select>
                 </div>
-                <div><label asp-for="Payment.Amount" class="form-label"></label><input asp-for="Payment.Amount" class="form-control" type="number" min="0.01" max="@Model.TotalOutstanding" step="0.01" /></div>
-                <div><label asp-for="Payment.Reference" class="form-label"></label><input asp-for="Payment.Reference" class="form-control" placeholder="Required unless cash" /></div>
-                <div><label asp-for="Payment.BankName" class="form-label">Bank / provider</label><input asp-for="Payment.BankName" class="form-control" /></div>
+                <div><label asp-for="Payment.Amount" class="form-label"></label><div class="input-group"><input asp-for="Payment.Amount" class="form-control" type="number" min="0.01" max="@Model.TotalOutstanding" step="0.01" /><button type="button" class="btn btn-outline-secondary" data-fill-balance="@Model.TotalOutstanding">Full balance</button></div></div>
+                <div data-payment-reference><label asp-for="Payment.Reference" class="form-label">Transaction / reference number</label><input asp-for="Payment.Reference" class="form-control" placeholder="Required for non-cash payments" /></div>
+                <div data-payment-provider><label asp-for="Payment.BankName" class="form-label">Bank / payment provider</label><input asp-for="Payment.BankName" class="form-control" /></div>
                 <div class="form-span-2"><label asp-for="Payment.Remarks" class="form-label"></label><input asp-for="Payment.Remarks" class="form-control" /></div>
-                <div class="d-flex align-items-end justify-content-end"><button type="submit" class="btn btn-primary">Post and issue receipt</button></div>
+                <div class="d-flex align-items-end justify-content-end"><button type="submit" class="btn btn-primary">Confirm payment and issue receipt</button></div>
             </form>
         </section>
     }
 
     @if (Model.CanConfigure)
     {
-        <section class="data-panel mb-3">
-            <div class="panel-heading"><div><h2>Adjustments</h2><p>Add an exceptional direct charge or an authorized concession.</p></div></div>
+        <details class="data-panel mb-3 fee-adjustments">
+            <summary class="panel-heading"><div><h2>Adjustments</h2><p>Add a special charge or approved concession only when needed.</p></div></summary>
             <form method="post" asp-page-handler="AddCharge" class="form-grid form-grid-4">
                 <input asp-for="NewCharge.StudentEnrollmentId" type="hidden" value="@Model.SelectedEnrollment.Id" />
                 <div>
@@ -150,7 +168,7 @@
                 <div class="form-span-2"><label asp-for="NewConcession.Reason" class="form-label"></label><input asp-for="NewConcession.Reason" class="form-control" /></div>
                 <div><button type="submit" class="btn btn-outline-primary">Record concession</button></div>
             </form>
-        </section>
+        </details>
     }
 
     <section class="data-panel">
@@ -196,4 +214,8 @@
             </table>
         </div>
     </section>
+}
+
+@section Scripts {
+    <script src="~/js/fees.js" asp-append-version="true"></script>
 }

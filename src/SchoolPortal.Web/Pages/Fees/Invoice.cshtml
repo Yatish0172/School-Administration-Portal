@@ -1,0 +1,81 @@
+@page
+@model SchoolPortal.Web.Pages.Fees.InvoiceModel
+@{
+    ViewData["Title"] = "Fee invoice";
+}
+
+<div class="receipt-actions mb-3">
+    <a asp-page="/Fees/Ledger" asp-route-EnrollmentId="@Model.Enrollment.Id" class="btn btn-outline-primary">Back to ledger</a>
+    <form method="post" asp-page-handler="Print">
+        <input type="hidden" name="EnrollmentId" value="@Model.Enrollment.Id" />
+        <button type="submit" class="btn btn-primary">Print invoice</button>
+    </form>
+</div>
+
+<article class="receipt-page">
+    <header class="receipt-header">
+        <div>
+            <p class="eyebrow">School Administration Portal</p>
+            <h1>Fee invoice</h1>
+            <p>Invoice @Model.InvoiceNumber</p>
+        </div>
+        <div class="text-end">
+            <strong>Issued @Model.IssueDate.ToString("dd MMM yyyy")</strong>
+            <div>Academic year @Model.Enrollment.AcademicYear.Name</div>
+        </div>
+    </header>
+
+    <section class="receipt-details">
+        <div><span>Student</span><strong>@Model.Enrollment.Student.FullName</strong></div>
+        <div><span>Admission number</span><strong>@Model.Enrollment.Student.AdmissionNumber</strong></div>
+        <div><span>Class / section</span><strong>@Model.Enrollment.Class.Name @Model.Enrollment.Section.Name</strong></div>
+        <div><span>Invoice status</span><strong>@(Model.TotalOutstanding > 0 ? "Payment due" : "Paid")</strong></div>
+    </section>
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Fee</th><th>Period</th><th>Due date</th><th>Charged</th><th>Concession</th><th>Paid</th><th>Balance</th></tr></thead>
+            <tbody>
+            @if (Model.Charges.Count == 0)
+            {
+                <tr><td colspan="7" class="empty-cell">No fee charges are recorded for this student.</td></tr>
+            }
+            else
+            {
+                @foreach (var row in Model.Charges)
+                {
+                    <tr>
+                        <td><strong>@row.Name</strong><div class="table-subtext">@row.Description</div></td>
+                        <td>@row.Period</td>
+                        <td>@row.DueDate.ToString("dd MMM yyyy")</td>
+                        <td>@row.Amount.ToString("N2")</td>
+                        <td>@row.Concession.ToString("N2")</td>
+                        <td>@row.Paid.ToString("N2")</td>
+                        <td><strong>@row.Outstanding.ToString("N2")</strong></td>
+                    </tr>
+                }
+            }
+            </tbody>
+            <tfoot>
+                <tr><th colspan="3">Totals</th><th>@Model.TotalCharged.ToString("N2")</th><th>@Model.TotalConcession.ToString("N2")</th><th>@Model.TotalPaid.ToString("N2")</th><th>@Model.TotalOutstanding.ToString("N2")</th></tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <section class="receipt-total">
+        <span>Total amount due</span>
+        <strong>@Model.TotalOutstanding.ToString("N2")</strong>
+    </section>
+
+    <footer class="receipt-signatures">
+        <div>Accounts office</div>
+        <div>Authorized signatory</div>
+    </footer>
+</article>
+
+@if (Model.PrintNow)
+{
+    @section Scripts {
+        <script>window.addEventListener("load", () => window.print());</script>
+    }
+}

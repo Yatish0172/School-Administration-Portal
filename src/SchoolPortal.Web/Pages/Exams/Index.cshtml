@@ -123,7 +123,7 @@
                     <div class="col-md-6"><label asp-for="NewExam.MarksEntryOpensAtUtc" class="form-label">Entry opens</label><input asp-for="NewExam.MarksEntryOpensAtUtc" type="datetime-local" class="form-control" /></div>
                     <div class="col-md-6"><label asp-for="NewExam.MarksEntryClosesAtUtc" class="form-label">Entry closes</label><input asp-for="NewExam.MarksEntryClosesAtUtc" type="datetime-local" class="form-control" /></div>
                     <div class="col-md-6"><label asp-for="NewExam.Weightage" class="form-label">Weight %</label><input asp-for="NewExam.Weightage" class="form-control" /></div>
-                    <div class="col-12"><button class="btn btn-primary">Create exam</button></div>
+                    <div class="col-12"><button type="submit" class="btn btn-primary">Create exam</button></div>
                 </form>
             </section>
 
@@ -139,7 +139,7 @@
                         <div class="col-12"><label asp-for="NewSubject.ExaminationDate" class="form-label">Date</label><input asp-for="NewSubject.ExaminationDate" type="date" class="form-control" /></div>
                         <div class="col-6"><label asp-for="NewSubject.StartsAt" class="form-label">Starts</label><input asp-for="NewSubject.StartsAt" type="time" class="form-control" /></div>
                         <div class="col-6"><label asp-for="NewSubject.EndsAt" class="form-label">Ends</label><input asp-for="NewSubject.EndsAt" type="time" class="form-control" /></div>
-                        <div class="col-12"><button class="btn btn-primary">Add subject</button></div>
+                        <div class="col-12"><button type="submit" class="btn btn-primary">Add subject</button></div>
                     </form>
                 </section>
 
@@ -149,7 +149,7 @@
                         <input type="hidden" asp-for="EntryWindow.ExaminationId" value="@Model.SelectedExam.Id" />
                         <div class="col-12"><label asp-for="EntryWindow.OpensAtUtc" class="form-label">Opens</label><input name="EntryWindow.OpensAtUtc" value="@Model.SelectedExam.MarksEntryOpensAtUtc?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")" type="datetime-local" class="form-control" /></div>
                         <div class="col-12"><label asp-for="EntryWindow.ClosesAtUtc" class="form-label">Closes</label><input name="EntryWindow.ClosesAtUtc" value="@Model.SelectedExam.MarksEntryClosesAtUtc?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")" type="datetime-local" class="form-control" /></div>
-                        <div class="col-12"><button class="btn btn-outline-primary">Update window</button></div>
+                        <div class="col-12"><button type="submit" class="btn btn-outline-primary">Update window</button></div>
                     </form>
                 </section>
 
@@ -163,7 +163,7 @@
                         <div class="col-6"><label asp-for="NewGrade.MinimumPercent" class="form-label">Minimum %</label><input asp-for="NewGrade.MinimumPercent" class="form-control" /></div>
                         <div class="col-6"><label asp-for="NewGrade.MaximumPercent" class="form-label">Maximum %</label><input asp-for="NewGrade.MaximumPercent" class="form-control" /></div>
                         <div class="col-12"><label asp-for="NewGrade.Description" class="form-label"></label><input asp-for="NewGrade.Description" class="form-control" /></div>
-                        <div class="col-12"><button class="btn btn-primary">Add grade</button></div>
+                        <div class="col-12"><button type="submit" class="btn btn-primary">Add grade</button></div>
                     </form>
                 </section>
             }

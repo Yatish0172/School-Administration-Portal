@@ -17,7 +17,8 @@ namespace SchoolPortal.Web.Pages.Staff;
         + PermissionCatalog.Administration.ManageUsers)]
 public sealed class IndexModel(
     SchoolPortalDbContext dbContext,
-    UserManager<ApplicationUser> userManager) : PageModel
+    UserManager<ApplicationUser> userManager,
+    TeacherAccountProvisioner teacherAccountProvisioner) : PageModel
 {
     public IReadOnlyList<StaffMember> StaffMembers { get; private set; } = [];
 
@@ -57,7 +58,7 @@ public sealed class IndexModel(
             .Single()
             .Entity;
         Apply(staff, NewStaff);
-        return await SaveAsync("Staff member added.");
+        return await SaveAsync("Staff member added.", staff);
     }
 
     public async Task<IActionResult> OnPostUpdateAsync()
@@ -84,7 +85,7 @@ public sealed class IndexModel(
             EditStaff.Version;
         Apply(staff, EditStaff);
         staff.IsActive = EditStaff.IsActive;
-        return await SaveAsync("Staff details updated.");
+        return await SaveAsync("Staff details updated.", staff);
     }
 
     private async Task<bool> ValidatePortalUserAsync(
@@ -120,16 +121,23 @@ public sealed class IndexModel(
         return true;
     }
 
-    private async Task<IActionResult> SaveAsync(string message)
+    private async Task<IActionResult> SaveAsync(
+        string message,
+        StaffMember staff)
     {
+        await using var transaction =
+            await dbContext.Database.BeginTransactionAsync();
         try
         {
+            await teacherAccountProvisioner.EnsureLinkedAsync(staff);
             await dbContext.SaveChangesAsync();
+            await transaction.CommitAsync();
             StatusMessage = message;
             return RedirectToPage();
         }
         catch (DbUpdateConcurrencyException)
         {
+            await transaction.RollbackAsync();
             dbContext.ChangeTracker.Clear();
             ModelState.AddModelError(
                 string.Empty,
@@ -137,10 +145,17 @@ public sealed class IndexModel(
         }
         catch (DbUpdateException)
         {
+            await transaction.RollbackAsync();
             dbContext.ChangeTracker.Clear();
             ModelState.AddModelError(
                 string.Empty,
                 "The staff number or linked portal account is already in use.");
+        }
+        catch (InvalidOperationException exception)
+        {
+            await transaction.RollbackAsync();
+            dbContext.ChangeTracker.Clear();
+            ModelState.AddModelError(string.Empty, exception.Message);
         }
 
         await LoadAsync();

@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SchoolPortal.Application.Authorization;
 using SchoolPortal.Domain.Authorization;
+using SchoolPortal.Domain.Staff;
+using SchoolPortal.Infrastructure.Identity;
 
 namespace SchoolPortal.Infrastructure.Persistence;
 
@@ -17,6 +19,8 @@ public static class DatabaseInitializer
         var scopedServices = scope.ServiceProvider;
         var dbContext = scopedServices.GetRequiredService<SchoolPortalDbContext>();
         var roleManager = scopedServices.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+        var teacherAccountProvisioner = scopedServices
+            .GetRequiredService<TeacherAccountProvisioner>();
 
         await dbContext.Database.MigrateAsync(cancellationToken);
         await using var seedTransaction = await dbContext.Database
@@ -92,6 +96,16 @@ public static class DatabaseInitializer
                     });
                 }
             }
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var unlinkedTeachers = await dbContext.Set<StaffMember>()
+            .Where(staff => staff.IsActive && !staff.PortalUserId.HasValue)
+            .ToListAsync(cancellationToken);
+        foreach (var staff in unlinkedTeachers)
+        {
+            await teacherAccountProvisioner.EnsureLinkedAsync(staff);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

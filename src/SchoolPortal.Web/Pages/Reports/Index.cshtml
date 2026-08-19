@@ -12,7 +12,7 @@
     </div>
     @if (Model.CanExport)
     {
-        <span class="badge text-bg-success">Excel and PDF export authorized</span>
+        <span class="badge text-bg-success">PDF, Excel, and CSV export authorized</span>
     }
     else
     {
@@ -142,6 +142,16 @@
                        asp-route-ExaminationId="@Model.ExaminationId"
                        asp-route-Status="@Model.Status"
                        class="btn btn-outline-primary">Export PDF</a>
+                    <a asp-page-handler="Export"
+                       asp-route-format="csv"
+                       asp-route-ReportKey="@Model.ReportKey"
+                       asp-route-From="@Model.From?.ToString("yyyy-MM-dd")"
+                       asp-route-To="@Model.To?.ToString("yyyy-MM-dd")"
+                       asp-route-AcademicYearId="@Model.AcademicYearId"
+                       asp-route-SectionId="@Model.SectionId"
+                       asp-route-ExaminationId="@Model.ExaminationId"
+                       asp-route-Status="@Model.Status"
+                       class="btn btn-outline-primary">Export CSV</a>
                 </div>
             }
         </div>

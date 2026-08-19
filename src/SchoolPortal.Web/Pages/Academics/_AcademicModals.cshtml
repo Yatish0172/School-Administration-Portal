@@ -7,7 +7,7 @@
             <form method="post" asp-page-handler="CreateYear">
                 <div class="modal-header">
                     <h2 class="modal-title fs-5">Add Academic Year</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body modal-form-grid">
                     <div>
@@ -25,7 +25,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary">Create year</button>
+                    <button type="submit" class="btn btn-primary">Create year</button>
                 </div>
             </form>
         </div>
@@ -39,7 +39,7 @@
             <form method="post" asp-page-handler="UpdateYear">
                 <div class="modal-header">
                     <h2 class="modal-title fs-5">Edit Academic Year Dates</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body modal-form-grid">
                     <input asp-for="EditAcademicYear.Id" type="hidden" id="edit-year-id" />
@@ -58,7 +58,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary">Save dates</button>
+                    <button type="submit" class="btn btn-primary">Save dates</button>
                 </div>
             </form>
         </div>
@@ -70,7 +70,7 @@
             <form method="post" asp-page-handler="BulkSetupClasses">
                 <div class="modal-header">
                     <h2 class="modal-title fs-5">Set Up Classes and Sections</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body modal-form-grid">
                     <p class="text-muted mb-0">Choose any range from Nursery to Class 12. Missing classes and lettered sections are created together.</p>
@@ -105,7 +105,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary">Create Class Range</button>
+                    <button type="submit" class="btn btn-primary">Create Class Range</button>
                 </div>
             </form>
         </div>
@@ -118,7 +118,7 @@
             <form method="post" asp-page-handler="SetSectionCount">
                 <div class="modal-header">
                     <h2 class="modal-title fs-5">Edit Sections for <span id="section-count-class-name"></span></h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body modal-form-grid">
                     <input asp-for="SectionCount.ClassId" type="hidden" id="section-count-class-id" />
@@ -138,9 +138,9 @@
                             asp-page-handler="RemoveClass"
                             name="id"
                             id="remove-class-id"
-                            onclick="return confirm('Remove this class from the active setup?')">Remove Class</button>
+                            data-confirm="Remove this class from the active setup?">Remove Class</button>
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary">Apply Section Count</button>
+                    <button type="submit" class="btn btn-primary">Apply Section Count</button>
                 </div>
             </form>
         </div>
@@ -153,7 +153,7 @@
             <form method="post" asp-page-handler="UpdateSection">
                 <div class="modal-header">
                     <h2 class="modal-title fs-5">Edit Section</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body modal-form-grid">
                     <input asp-for="EditSection.Id" type="hidden" id="edit-section-id" />
@@ -179,7 +179,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary">Save Section</button>
+                    <button type="submit" class="btn btn-primary">Save Section</button>
                 </div>
             </form>
         </div>
@@ -192,7 +192,7 @@
             <form method="post" asp-page-handler="SaveSubjectTeacher">
                 <div class="modal-header">
                     <h2 class="modal-title fs-5">Add Subject and Teacher Assignment</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body modal-form-grid">
                     <div class="row g-3">
@@ -251,7 +251,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary">Save Assignment</button>
+                    <button type="submit" class="btn btn-primary">Save Assignment</button>
                 </div>
             </form>
         </div>
