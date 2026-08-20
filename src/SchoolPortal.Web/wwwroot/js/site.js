@@ -178,6 +178,10 @@
             return;
         }
 
+        if (message.classList.contains("alert-danger")) {
+            return;
+        }
+
         const delay = Number(message.dataset.autoDismiss) || 5000;
         window.setTimeout(() => {
             message.classList.add("feedback-toast-hiding");

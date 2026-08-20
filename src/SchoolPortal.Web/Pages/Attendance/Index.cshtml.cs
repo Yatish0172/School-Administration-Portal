@@ -73,6 +73,13 @@ public sealed class IndexModel(
         ModelState.Clear();
         TryValidateModel(Entries, nameof(Entries));
 
+        if (PeriodNumber < 0 || PeriodNumber > 12)
+        {
+            ModelState.AddModelError(string.Empty, "Choose a valid period.");
+            await LoadAsync(cancellationToken);
+            return Page();
+        }
+
         if (!SectionId.HasValue)
         {
             ModelState.AddModelError(string.Empty, "Choose a section.");
@@ -261,6 +268,9 @@ public sealed class IndexModel(
             .Include(x => x.Session)
                 .ThenInclude(x => x.Section)
                     .ThenInclude(x => x.Class)
+            .Include(x => x.Session)
+                .ThenInclude(x => x.Section)
+                    .ThenInclude(x => x.AcademicYear)
             .SingleOrDefaultAsync(
                 x => x.Id == Correction.EntryId,
                 cancellationToken);
@@ -272,6 +282,24 @@ public sealed class IndexModel(
         SectionId = entry.Session.SectionId;
         Date = entry.Session.Date;
         PeriodNumber = entry.Session.PeriodNumber;
+
+        if (!await accessService.CanMarkSectionAsync(
+            User,
+            entry.Session.SectionId,
+            cancellationToken))
+        {
+            return Forbid();
+        }
+
+        if (entry.Session.Section.AcademicYear.Status == AcademicYearStatus.Closed)
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                "Attendance cannot be changed for a closed academic year.");
+            await LoadAsync(cancellationToken);
+            return Page();
+        }
+
         if (entry.Status == Correction.NewStatus)
         {
             ModelState.AddModelError(

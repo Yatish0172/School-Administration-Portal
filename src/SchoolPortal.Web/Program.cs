@@ -54,6 +54,8 @@ builder.Services.AddScoped<StandardReportService>();
 builder.Services.AddScoped<ReportExportService>();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.Configure<SchoolPortal.Web.Licensing.TrialOptions>(
+    builder.Configuration.GetSection(SchoolPortal.Web.Licensing.TrialOptions.SectionName));
 
 var app = builder.Build();
 
@@ -67,6 +69,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseMiddleware<SchoolPortal.Web.Licensing.TrialExpiryMiddleware>();
 app.UseAuthentication();
 app.UseMiddleware<LocalAutomaticSignInMiddleware>();
 app.UseMiddleware<RequirePasswordChangeMiddleware>();

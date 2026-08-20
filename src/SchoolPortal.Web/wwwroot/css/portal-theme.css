@@ -773,3 +773,129 @@ details > summary {
     transform: none !important;
   }
 }
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.85rem;
+  margin: 1.2rem 0 1.6rem;
+}
+
+.dashboard-stats .access-summary-card small {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--portal-muted);
+  font-size: 0.72rem;
+}
+
+.access-summary-card strong,
+.table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.module-icon {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid #dfe4f6;
+  border-radius: 0.75rem;
+  color: var(--portal-blue);
+  background: var(--portal-indigo-soft);
+}
+
+.module-icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.module-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.module-card-heading {
+  align-items: center;
+  margin-bottom: 0.95rem;
+}
+
+.module-card h2 {
+  margin-bottom: 0.45rem;
+  font-size: 1.06rem;
+  text-wrap: balance;
+}
+
+.module-card p {
+  min-height: 0;
+  margin-bottom: 1.1rem;
+}
+
+.module-card .module-state {
+  margin-top: auto;
+}
+
+.module-card-muted .module-icon {
+  border-color: #e4e7ee;
+  color: var(--portal-muted);
+  background: #f1f3f7;
+}
+
+.dashboard-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-hero > div {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-motif {
+  position: absolute;
+  z-index: 0;
+  right: clamp(6rem, 18vw, 19rem);
+  bottom: -2.6rem;
+  width: 11.5rem;
+  height: 11.5rem;
+  color: var(--portal-blue);
+  opacity: 0.07;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.4rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--portal-border);
+}
+
+.auth-brand .brand-mark {
+  display: inline-grid;
+  place-items: center;
+  color: var(--portal-navy);
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+.auth-brand-copy {
+  display: grid;
+  line-height: 1.15;
+}
+
+.auth-brand-copy strong {
+  color: var(--portal-navy);
+  font-size: 0.9rem;
+  letter-spacing: -0.02em;
+}
+
+.auth-brand-copy small {
+  color: var(--portal-muted);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

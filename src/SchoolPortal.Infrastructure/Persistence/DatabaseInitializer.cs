@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SchoolPortal.Application.Authorization;
 using SchoolPortal.Domain.Authorization;
+using SchoolPortal.Domain.Licensing;
 using SchoolPortal.Domain.Staff;
 using SchoolPortal.Infrastructure.Identity;
 
@@ -96,6 +97,11 @@ public static class DatabaseInitializer
                     });
                 }
             }
+        }
+
+        if (!await dbContext.Set<TrialState>().AnyAsync(cancellationToken))
+        {
+            dbContext.Add(new TrialState { FirstRunAtUtc = DateTimeOffset.UtcNow });
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

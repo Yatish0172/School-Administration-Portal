@@ -4,11 +4,31 @@
     ViewData["Title"] = "Dashboard";
 }
 
+@functions {
+    private static string ModuleIconPath(string name) => name switch
+    {
+        "Students" => "<path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/>",
+        "Academics" => "<polygon points=\"12 2 2 7 12 12 22 7 12 2\"/><polyline points=\"2 17 12 22 22 17\"/><polyline points=\"2 12 12 17 22 12\"/>",
+        "Attendance" => "<polyline points=\"9 11 12 14 22 4\"/><path d=\"M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11\"/>",
+        "Exams & marks" => "<path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z\"/>",
+        "Fees" => "<rect x=\"2\" y=\"6\" width=\"20\" height=\"12\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"2.5\"/>",
+        "Library" => "<path d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z\"/><path d=\"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/>",
+        "Reports" => "<line x1=\"18\" y1=\"20\" x2=\"18\" y2=\"10\"/><line x1=\"12\" y1=\"20\" x2=\"12\" y2=\"4\"/><line x1=\"6\" y1=\"20\" x2=\"6\" y2=\"14\"/>",
+        _ => "<path d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"/>",
+    };
+}
+
 <section class="dashboard-hero">
+    <svg class="hero-motif" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 10 12 5 2 10l10 5 10-5z"/>
+        <path d="M6 12.5v4.5c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5"/>
+        <path d="M22 10v6"/>
+    </svg>
     <div>
         <p class="eyebrow">Dashboard</p>
         <h1>Welcome, @Model.DisplayName</h1>
-        <p class="text-muted mb-0">@Model.RoleSummary</p>
+        <p class="text-muted mb-0">@Model.RoleSummary · @Model.Today.ToString("dddd, d MMMM yyyy")</p>
     </div>
     <div class="foundation-status">
         <span class="status-dot"></span>
@@ -16,12 +36,29 @@
     </div>
 </section>
 
+@if (Model.Stats.Count > 0)
+{
+    <section class="dashboard-stats" aria-label="Today at a glance">
+        @foreach (var stat in Model.Stats)
+        {
+            <div class="access-summary-card">
+                <span>@stat.Label</span>
+                <strong>@stat.Value</strong>
+                <small>@stat.Caption</small>
+            </div>
+        }
+    </section>
+}
+
 <section class="module-grid" aria-label="Portal modules">
     @foreach (var module in Model.Modules)
     {
         <article class="module-card @(module.IsGranted ? string.Empty : "module-card-muted")">
             <div class="module-card-heading">
-                <h2>@module.Name</h2>
+                <span class="module-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                         stroke-linecap="round" stroke-linejoin="round">@Html.Raw(ModuleIconPath(module.Name))</svg>
+                </span>
                 @if (module.IsGranted)
                 {
                     <span class="badge text-bg-success">Authorized</span>
@@ -31,6 +68,7 @@
                     <span class="badge text-bg-secondary">Restricted</span>
                 }
             </div>
+            <h2>@module.Name</h2>
             <p>@module.Description</p>
             @if (module.IsGranted && module.Name == "Students")
             {
@@ -50,7 +88,7 @@
             }
             else if (module.IsGranted && module.Name == "Fees")
             {
-                <a asp-page="/Fees/Ledger" class="module-state module-link">Open fees and collections →</a>
+                <a asp-page="/Fees/Overview" class="module-state module-link">Open fees and collections →</a>
             }
             else if (module.IsGranted && module.Name == "Library")
             {

@@ -46,6 +46,14 @@ public sealed class EditModel(
     public async Task<IActionResult> OnPostAsync(Guid id)
     {
         ValidateGuardians();
+
+        if (Input.DateOfBirth > DateOnly.FromDateTime(DateTime.Today))
+        {
+            ModelState.AddModelError(
+                $"{nameof(Input)}.{nameof(Input.DateOfBirth)}",
+                "Date of birth cannot be in the future.");
+        }
+
         if (!ModelState.IsValid)
         {
             StudentId = id;
@@ -207,6 +215,19 @@ public sealed class EditModel(
             ModelState.AddModelError(
                 nameof(Guardians),
                 "Add at least one guardian with a name and phone number.");
+        }
+
+        for (var index = 0; index < Guardians.Count; index++)
+        {
+            var guardian = Guardians[index];
+            var hasAnyValue = !string.IsNullOrWhiteSpace(guardian.Name)
+                || !string.IsNullOrWhiteSpace(guardian.Phone);
+            if (hasAnyValue && !IsCompleteGuardian(guardian))
+            {
+                ModelState.AddModelError(
+                    $"{nameof(Guardians)}[{index}]",
+                    "Each guardian needs both a name and phone number.");
+            }
         }
 
         if (complete.Count(x => x.IsPrimary) > 1)

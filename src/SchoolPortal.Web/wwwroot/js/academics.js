@@ -13,6 +13,17 @@
     }
 
 
+    const editYearStart = document.getElementById("edit-year-start");
+    const editYearEnd = document.getElementById("edit-year-end");
+    const syncEditYearEndMinimum = () => {
+        if (editYearStart && editYearEnd) {
+            editYearEnd.min = editYearStart.value || editYearStart.min;
+        }
+    };
+    if (editYearStart && editYearEnd) {
+        editYearStart.addEventListener("change", syncEditYearEndMinimum);
+    }
+
     document.querySelectorAll(".edit-year-button").forEach(button => {
         button.addEventListener("click", () => {
             document.getElementById("edit-year-id").value = button.dataset.id;
@@ -21,16 +32,9 @@
             document.getElementById("edit-year-version").value = button.dataset.version;
             document.getElementById("edit-year-start").value = button.dataset.start;
             document.getElementById("edit-year-end").value = button.dataset.end;
+            syncEditYearEndMinimum();
         });
     });
-
-    const editYearStart = document.getElementById("edit-year-start");
-    const editYearEnd = document.getElementById("edit-year-end");
-    if (editYearStart && editYearEnd) {
-        editYearStart.addEventListener("change", () => {
-            editYearEnd.min = editYearStart.value || editYearStart.min;
-        });
-    }
     document.querySelectorAll(".section-count-button").forEach(button => {
         button.addEventListener("click", () => {
             document.getElementById("section-count-class-id").value =

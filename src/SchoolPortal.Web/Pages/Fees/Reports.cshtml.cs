@@ -74,6 +74,7 @@ public sealed class ReportsModel(
             .Include(x => x.Concessions)
             .Include(x => x.PaymentAllocations)
                 .ThenInclude(x => x.FeePayment)
+            .AsSplitQuery()
             .ToListAsync(cancellationToken);
         Dues = charges
             .Select(x => new

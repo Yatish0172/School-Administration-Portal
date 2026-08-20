@@ -48,6 +48,10 @@
                                          {
                                              "from":  "desktop-publish",
                                              "to":  "web"
+                                         },
+                                         {
+                                             "from":  "vendor/postgresql-runtime",
+                                             "to":  "postgresql"
                                          }
                                      ],
                   "win":  {

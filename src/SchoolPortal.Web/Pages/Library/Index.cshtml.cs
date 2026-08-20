@@ -85,6 +85,11 @@ public sealed class IndexModel(
             return Page();
         }
 
+        if (string.IsNullOrWhiteSpace(referenceType))
+        {
+            return BadRequest();
+        }
+
         var name = ReferenceName.Trim();
         Guid entityId;
         object entity;
@@ -268,6 +273,11 @@ public sealed class IndexModel(
         if (!CanManage)
         {
             return Forbid();
+        }
+
+        if (!Enum.IsDefined(status))
+        {
+            return BadRequest();
         }
 
         var copy = await dbContext.Set<LibraryCopy>()

@@ -45,6 +45,13 @@ public sealed class DetailsModel(
             return Forbid();
         }
 
+        if (!Enum.IsDefined(NewStatus))
+        {
+            ModelState.AddModelError(string.Empty, "Choose a valid student status.");
+            var invalidResult = await LoadAsync(id);
+            return invalidResult ?? Page();
+        }
+
         var student = await dbContext.Set<Student>().SingleOrDefaultAsync(x => x.Id == id);
         if (student is null)
         {

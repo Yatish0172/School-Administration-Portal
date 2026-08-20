@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SchoolPortal.Domain.Authorization;
+using SchoolPortal.Domain.Licensing;
 using SchoolPortal.Infrastructure.Identity;
 
 namespace SchoolPortal.Infrastructure.Persistence;
@@ -13,6 +14,8 @@ public sealed class SchoolPortalDbContext(
     public DbSet<Permission> Permissions => Set<Permission>();
 
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+
+    public DbSet<TrialState> TrialStates => Set<TrialState>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

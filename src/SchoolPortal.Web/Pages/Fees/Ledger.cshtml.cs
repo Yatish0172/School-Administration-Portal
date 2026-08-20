@@ -337,6 +337,7 @@ public sealed class LedgerModel(
             .Include(x => x.Concessions)
             .Include(x => x.PaymentAllocations)
                 .ThenInclude(x => x.FeePayment)
+            .AsSplitQuery()
             .OrderBy(x => x.DueDate)
             .ThenBy(x => x.CreatedAtUtc)
             .ToListAsync(cancellationToken);

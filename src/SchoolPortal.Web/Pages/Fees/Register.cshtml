@@ -67,7 +67,7 @@
                 {
                     <tr>
                         <td><a asp-page="/Fees/Receipt" asp-route-number="@payment.ReceiptNumber" class="record-link">@payment.ReceiptNumber</a></td>
-                        <td><strong>@payment.StudentName</strong><div class="table-subtext">@payment.AdmissionNumber � @payment.ClassSection</div></td>
+                        <td><strong>@payment.StudentName</strong><div class="table-subtext">@payment.AdmissionNumber · @payment.ClassSection</div></td>
                         <td>@payment.Date.ToString("dd MMM yyyy")</td>
                         <td>@payment.Mode<div class="table-subtext">@payment.Reference</div></td>
                         <td><strong>@payment.Amount.ToString("N2")</strong></td>

@@ -1,6 +1,8 @@
 node_modules/
 Database/
-dist/
+/dist/
+/desktop-publish/
+/vendor/
 license/private.key
 css/app.css
 *.log

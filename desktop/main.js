@@ -10,6 +10,7 @@ const { app, BrowserWindow, dialog, Menu, shell } = require('electron');
 const PORT = Number(process.env.SCHOOL_PORTAL_PORT || 5100);
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const READY_URL = `${BASE_URL}/health/ready`;
+const PACKAGED_POSTGRES_PORT = 55432;
 
 let mainWindow = null;
 let startupWindow = null;
@@ -84,15 +85,28 @@ function resolveDotnetRoot() {
     : process.env.DOTNET_ROOT;
 }
 
-function ensureDevelopmentPostgres() {
+function resolvePostgresBin() {
+  const configured = process.env.SCHOOL_PORTAL_POSTGRES_BIN;
+  if (configured && fs.existsSync(configured)) return configured;
 
-  const postgresRoot = path.join(
+  const portable = path.join(
     os.homedir(),
     '.local',
     'postgresql-18.4',
-    'pgsql'
+    'pgsql',
+    'bin'
   );
-  const postgresBin = path.join(postgresRoot, 'bin');
+  if (fs.existsSync(portable)) return portable;
+
+  const systemInstall = 'C:\\Program Files\\PostgreSQL\\18\\bin';
+  if (fs.existsSync(systemInstall)) return systemInstall;
+
+  return portable;
+}
+
+function ensureDevelopmentPostgres() {
+
+  const postgresBin = resolvePostgresBin();
   const dataDirectory = path.join(
     os.homedir(),
     '.local',
@@ -131,6 +145,103 @@ function ensureDevelopmentPostgres() {
       `PostgreSQL could not start.\n${start.stderr || start.stdout}`
     );
   }
+}
+
+function packagedPostgresBin() {
+  return path.join(process.resourcesPath, 'postgresql', 'bin');
+}
+
+function packagedPostgresDataDir() {
+  return path.join(app.getPath('userData'), 'postgres-data');
+}
+
+function ensurePackagedPostgres() {
+  const postgresBin = packagedPostgresBin();
+  const dataDirectory = packagedPostgresDataDir();
+  const logFile = path.join(app.getPath('userData'), 'postgres.log');
+
+  const initdbExe = path.join(postgresBin, 'initdb.exe');
+  const pgCtlExe = path.join(postgresBin, 'pg_ctl.exe');
+  const pgIsReadyExe = path.join(postgresBin, 'pg_isready.exe');
+  const psqlExe = path.join(postgresBin, 'psql.exe');
+
+  if (!fs.existsSync(initdbExe) || !fs.existsSync(pgCtlExe)) {
+    throw new Error('The bundled PostgreSQL runtime is missing from this installation.');
+  }
+
+  const isFirstRun = !fs.existsSync(path.join(dataDirectory, 'PG_VERSION'));
+
+  if (isFirstRun) {
+    fs.mkdirSync(dataDirectory, { recursive: true });
+    const init = spawnSync(
+      initdbExe,
+      ['-D', dataDirectory, '-U', 'postgres', '-A', 'trust', '-E', 'UTF8'],
+      { windowsHide: true, encoding: 'utf8' }
+    );
+    if (init.status !== 0) {
+      throw new Error(
+        `The local database could not be initialized.\n${init.stderr || init.stdout}`
+      );
+    }
+    fs.appendFileSync(
+      path.join(dataDirectory, 'postgresql.conf'),
+      `\nport = ${PACKAGED_POSTGRES_PORT}\nlisten_addresses = '127.0.0.1'\n`
+    );
+  }
+
+  const ready = spawnSync(
+    pgIsReadyExe,
+    ['-h', '127.0.0.1', '-p', String(PACKAGED_POSTGRES_PORT)],
+    { windowsHide: true, encoding: 'utf8' }
+  );
+  if (ready.status !== 0) {
+    const start = spawnSync(
+      pgCtlExe,
+      ['-D', dataDirectory, '-l', logFile, '-w', '-t', '30', 'start'],
+      { windowsHide: true, encoding: 'utf8' }
+    );
+    if (start.status !== 0) {
+      throw new Error(
+        `The local database could not start.\n${start.stderr || start.stdout}`
+      );
+    }
+  }
+
+  const roleExists = spawnSync(
+    psqlExe,
+    [
+      '-U', 'postgres',
+      '-h', '127.0.0.1',
+      '-p', String(PACKAGED_POSTGRES_PORT),
+      '-tAc', "SELECT 1 FROM pg_roles WHERE rolname = 'school_portal';",
+    ],
+    { windowsHide: true, encoding: 'utf8' }
+  );
+  if (roleExists.status !== 0) {
+    throw new Error(
+      `The local database could not be reached.\n${roleExists.stderr || roleExists.stdout}`
+    );
+  }
+
+  if (roleExists.stdout.trim() !== '1') {
+    const createRole = spawnSync(
+      psqlExe,
+      [
+        '-U', 'postgres',
+        '-h', '127.0.0.1',
+        '-p', String(PACKAGED_POSTGRES_PORT),
+        '-c', 'CREATE ROLE school_portal LOGIN CREATEDB;',
+      ],
+      { windowsHide: true, encoding: 'utf8' }
+    );
+    if (createRole.status !== 0) {
+      throw new Error(
+        `The application database role could not be created.\n${createRole.stderr || createRole.stdout}`
+      );
+    }
+  }
+
+  return `Host=127.0.0.1;Port=${PACKAGED_POSTGRES_PORT};Database=school_portal;Username=school_portal`;
 }
 
 function buildDevelopmentBackend() {
@@ -181,7 +292,9 @@ function backendExecutable() {
 async function startBackend() {
   if ((await requestStatus(READY_URL)) === 200) return;
 
-  ensureDevelopmentPostgres();
+  const connectionString = app.isPackaged
+    ? ensurePackagedPostgres()
+    : (ensureDevelopmentPostgres(), null);
   buildDevelopmentBackend();
 
   const executable = backendExecutable();
@@ -194,9 +307,17 @@ async function startBackend() {
     windowsHide: true,
     env: {
       ...process.env,
-      ASPNETCORE_ENVIRONMENT: 'Development',
-      Authentication__RequirePassword: 'false',
-      Authentication__BypassLogin: 'true',
+      ASPNETCORE_ENVIRONMENT: app.isPackaged ? 'Production' : 'Development',
+      ...(app.isPackaged
+        ? {
+            ConnectionStrings__SchoolDb: connectionString,
+            Trial__Enabled: 'true',
+            Trial__DurationDays: '7',
+          }
+        : {
+            Authentication__RequirePassword: 'false',
+            Authentication__BypassLogin: 'true',
+          }),
       ...(resolveDotnetRoot()
         ? { DOTNET_ROOT: resolveDotnetRoot() }
         : {}),
@@ -261,6 +382,24 @@ function closeStartupWindow() {
   startupWindow.close();
 }
 
+function windowIcon() {
+  const packaged = path.join(
+    process.resourcesPath,
+    'web',
+    'wwwroot',
+    'favicon.ico'
+  );
+  const development = path.join(
+    repositoryRoot(),
+    'src',
+    'SchoolPortal.Web',
+    'wwwroot',
+    'favicon.ico'
+  );
+  const icon = app.isPackaged ? packaged : development;
+  return fs.existsSync(icon) ? icon : undefined;
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
@@ -270,6 +409,7 @@ function createWindow() {
     show: false,
     backgroundColor: '#ffffff',
     title: 'School Administration Portal',
+    icon: windowIcon(),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
