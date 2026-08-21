@@ -155,15 +155,35 @@ public sealed class IndexModel(
 
         var currentRoles = await userManager.GetRolesAsync(user);
         var currentRole = currentRoles.FirstOrDefault() ?? string.Empty;
-        if (user.IsActive
-            && currentRoles.Contains(RoleCatalog.SuperAdministrator)
-            && (!EditAccess.IsActive
-                || !string.Equals(EditAccess.Role, RoleCatalog.SuperAdministrator, StringComparison.Ordinal))
-            && await CountActiveSuperAdministratorsAsync() <= 1)
+
+        var actor = await userManager.GetUserAsync(User);
+        if (actor is not null && actor.Id == user.Id)
+        {
+            var changesOwnRole = !string.Equals(
+                EditAccess.Role,
+                currentRole,
+                StringComparison.Ordinal);
+            if (!EditAccess.IsActive || changesOwnRole)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "You cannot change or disable your own account. Ask another administrator.");
+                OpenModal = "manageAccessModal";
+                await LoadAsync();
+                return Page();
+            }
+        }
+
+        var actorIsSuperAdministrator = actor is not null
+            && await userManager.IsInRoleAsync(actor, RoleCatalog.SuperAdministrator);
+        var touchesSuperAdministrator =
+            string.Equals(EditAccess.Role, RoleCatalog.SuperAdministrator, StringComparison.Ordinal)
+            || currentRoles.Contains(RoleCatalog.SuperAdministrator);
+        if (touchesSuperAdministrator && !actorIsSuperAdministrator)
         {
             ModelState.AddModelError(
                 string.Empty,
-                "This is the last active Super Administrator. Give another user that access before changing this account.");
+                "Only a Super Administrator can grant or change Super Administrator access.");
             OpenModal = "manageAccessModal";
             await LoadAsync();
             return Page();
@@ -171,7 +191,25 @@ public sealed class IndexModel(
 
         var before = new { Role = currentRole, user.IsActive };
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync();
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            System.Data.IsolationLevel.Serializable);
+        await dbContext.Database.ExecuteSqlRawAsync(
+            "SELECT pg_advisory_xact_lock(8172635402)");
+
+        if (user.IsActive
+            && currentRoles.Contains(RoleCatalog.SuperAdministrator)
+            && (!EditAccess.IsActive
+                || !string.Equals(EditAccess.Role, RoleCatalog.SuperAdministrator, StringComparison.Ordinal))
+            && await CountActiveSuperAdministratorsAsync() <= 1)
+        {
+            await transaction.RollbackAsync();
+            ModelState.AddModelError(
+                string.Empty,
+                "This is the last active Super Administrator. Give another user that access before changing this account.");
+            OpenModal = "manageAccessModal";
+            await LoadAsync();
+            return Page();
+        }
         if (!currentRoles.SequenceEqual([EditAccess.Role], StringComparer.Ordinal))
         {
             if (currentRoles.Count > 0)

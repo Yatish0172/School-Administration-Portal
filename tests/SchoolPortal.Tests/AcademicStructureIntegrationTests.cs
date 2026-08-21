@@ -70,7 +70,7 @@ public sealed partial class AcademicStructureIntegrationTests(
                 Assert.DoesNotContain("<th>Status</th>", html);
                 Assert.DoesNotContain("Assign one teacher per subject", html);
                 Assert.DoesNotContain("Create an all-class break", html);
-                Assert.DoesNotContain("id=\"edit-break-active\"", html);
+                Assert.Contains("type=\"hidden\" id=\"edit-break-active\"", html);
                 Assert.DoesNotContain("Create a Nursery-Class 12 range", html);
                 Assert.DoesNotContain("BulkClassSetup_AcademicYearId", html);
                 Assert.DoesNotContain("SectionCount_AcademicYearId", html);

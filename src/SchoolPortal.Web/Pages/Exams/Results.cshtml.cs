@@ -142,7 +142,27 @@ public sealed class ResultsModel(
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            System.Data.IsolationLevel.Serializable,
             cancellationToken);
+        var lockKey = $"exam-publish:{exam.Id:N}";
+        await dbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtext({lockKey}))",
+            cancellationToken);
+
+        var currentStatus = await dbContext.Set<Examination>()
+            .Where(x => x.Id == exam.Id)
+            .Select(x => x.Status)
+            .SingleAsync(cancellationToken);
+        if (currentStatus != ExaminationStatus.MarksEntry)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            ModelState.AddModelError(
+                string.Empty,
+                "Only an examination in marks entry can be published.");
+            await LoadAsync(cancellationToken);
+            return Page();
+        }
+
         var marks = await dbContext.Set<StudentMark>()
             .Include(x => x.ExaminationSubject)
             .Where(x => subjectIds.Contains(x.ExaminationSubjectId))

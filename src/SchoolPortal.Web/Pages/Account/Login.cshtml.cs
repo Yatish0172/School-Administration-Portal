@@ -49,11 +49,6 @@ public sealed class LoginModel(
 
         var username = Input.Username.Trim();
         var user = await userManager.FindByNameAsync(username);
-        if (user is not null && !user.IsActive)
-        {
-            ModelState.AddModelError(string.Empty, "This account is disabled.");
-            return Page();
-        }
 
         Microsoft.AspNetCore.Identity.SignInResult result;
         if (PasswordRequired)
@@ -66,11 +61,32 @@ public sealed class LoginModel(
                 return Page();
             }
 
+            // Reveal the disabled state only after the caller has proven they
+            // hold the password, so anonymous requests cannot enumerate accounts.
+            if (user is not null && !user.IsActive)
+            {
+                if (await userManager.CheckPasswordAsync(user, Input.Password))
+                {
+                    ModelState.AddModelError(string.Empty, "This account is disabled.");
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "Invalid username or password.");
+                }
+
+                return Page();
+            }
+
             result = await signInManager.PasswordSignInAsync(
                 username,
                 Input.Password,
                 isPersistent: false,
                 lockoutOnFailure: true);
+        }
+        else if (user is not null && !user.IsActive)
+        {
+            ModelState.AddModelError(string.Empty, "This account is disabled.");
+            return Page();
         }
         else if (user is not null)
         {
@@ -91,7 +107,10 @@ public sealed class LoginModel(
                 await userManager.UpdateAsync(user);
             }
 
-            return LocalRedirect(Input.ReturnUrl ?? Url.Page("/Index")!);
+            var returnUrl = Input.ReturnUrl;
+            return !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
+                ? LocalRedirect(returnUrl)
+                : RedirectToPage("/Index");
         }
 
         if (result.IsLockedOut)

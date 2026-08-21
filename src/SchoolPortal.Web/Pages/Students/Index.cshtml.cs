@@ -83,16 +83,21 @@ public sealed class IndexModel(
 
         if (!string.IsNullOrWhiteSpace(Search))
         {
-            var term = Search.Trim();
+            // Escape ILIKE wildcards so a literal % or _ in the search
+            // term matches literally instead of matching everything.
+            var term = Search.Trim()
+                .Replace(@"\", @"\\")
+                .Replace("%", @"\%")
+                .Replace("_", @"\_");
             students = students.Where(x =>
-                EF.Functions.ILike(x.AdmissionNumber, $"%{term}%")
-                || EF.Functions.ILike(x.FirstName, $"%{term}%")
-                || EF.Functions.ILike(x.LastName, $"%{term}%")
+                EF.Functions.ILike(x.AdmissionNumber, $"%{term}%", @"\")
+                || EF.Functions.ILike(x.FirstName, $"%{term}%", @"\")
+                || EF.Functions.ILike(x.LastName, $"%{term}%", @"\")
                 || (x.MiddleName != null
-                    && EF.Functions.ILike(x.MiddleName, $"%{term}%"))
+                    && EF.Functions.ILike(x.MiddleName, $"%{term}%", @"\"))
                 || x.Guardians.Any(guardian =>
-                    EF.Functions.ILike(guardian.Name, $"%{term}%")
-                    || EF.Functions.ILike(guardian.Phone, $"%{term}%")));
+                    EF.Functions.ILike(guardian.Name, $"%{term}%", @"\")
+                    || EF.Functions.ILike(guardian.Phone, $"%{term}%", @"\")));
         }
 
         Total = await students.CountAsync();

@@ -22,40 +22,61 @@
         The student has an outstanding fee balance of @Model.TotalOutstanding.ToString("N2").
         Clear or formally adjust the dues before printing the certificate.
     </div>
+
+    <article class="receipt-page">
+        <header class="receipt-header">
+            <div>
+                <p class="eyebrow">School Administration Portal</p>
+                <h1>No Dues Certificate</h1>
+                <p>Not available</p>
+            </div>
+        </header>
+        <section class="noc-body">
+            <p><strong>@Model.Enrollment.Student.FullName</strong>
+            (admission number <strong>@Model.Enrollment.Student.AdmissionNumber</strong>,
+            <strong>@Model.Enrollment.Class.Name @Model.Enrollment.Section.Name</strong>)
+            still has an outstanding fee balance of
+            <strong>@Model.TotalOutstanding.ToString("N2")</strong> for academic year
+            <strong>@Model.Enrollment.AcademicYear.Name</strong>.
+            The certificate becomes available once the balance is cleared.</p>
+        </section>
+    </article>
 }
+else
+{
+    <article class="receipt-page">
+        <header class="receipt-header">
+            <div>
+                <p class="eyebrow">School Administration Portal</p>
+                <h1>No Dues Certificate</h1>
+                <p>Certificate @Model.CertificateNumber</p>
+            </div>
+            <div class="text-end">
+                <strong>@Model.IssueDate.ToString("dd MMM yyyy")</strong>
+                <div>Academic year @Model.Enrollment.AcademicYear.Name</div>
+            </div>
+        </header>
 
-<article class="receipt-page">
-    <header class="receipt-header">
-        <div>
-            <p class="eyebrow">School Administration Portal</p>
-            <h1>No Dues Certificate</h1>
-            <p>Certificate @Model.CertificateNumber</p>
-        </div>
-        <div class="text-end">
-            <strong>@Model.IssueDate.ToString("dd MMM yyyy")</strong>
-            <div>Academic year @Model.Enrollment.AcademicYear.Name</div>
-        </div>
-    </header>
+        <section class="noc-body">
+            <p>This is to certify that <strong>@Model.Enrollment.Student.FullName</strong>,
+            admission number <strong>@Model.Enrollment.Student.AdmissionNumber</strong>,
+            enrolled in <strong>@Model.Enrollment.Class.Name @Model.Enrollment.Section.Name</strong>,
+            has no outstanding school fee dues for academic year
+            <strong>@Model.Enrollment.AcademicYear.Name</strong> as of
+            <strong>@Model.IssueDate.ToString("dd MMM yyyy")</strong>.</p>
 
-    <section class="noc-body">
-        <p>This is to certify that <strong>@Model.Enrollment.Student.FullName</strong>,
-        admission number <strong>@Model.Enrollment.Student.AdmissionNumber</strong>,
-        enrolled in <strong>@Model.Enrollment.Class.Name @Model.Enrollment.Section.Name</strong>,
-        has no outstanding school fee dues for academic year
-        <strong>@Model.Enrollment.AcademicYear.Name</strong> as of
-        <strong>@Model.IssueDate.ToString("dd MMM yyyy")</strong>.</p>
+            <div class="noc-balance">
+                <span>Outstanding balance verified</span>
+                <strong>@Model.TotalOutstanding.ToString("N2")</strong>
+            </div>
+        </section>
 
-        <div class="noc-balance">
-            <span>Outstanding balance verified</span>
-            <strong>@Model.TotalOutstanding.ToString("N2")</strong>
-        </div>
-    </section>
-
-    <footer class="receipt-signatures">
-        <div>Accounts office</div>
-        <div>Authorized signatory</div>
-    </footer>
-</article>
+        <footer class="receipt-signatures">
+            <div>Accounts office</div>
+            <div>Authorized signatory</div>
+        </footer>
+    </article>
+}
 
 @if (Model.PrintNow && Model.CanIssue)
 {

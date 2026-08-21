@@ -275,7 +275,7 @@ public sealed class IndexModel(
             return Forbid();
         }
 
-        if (!Enum.IsDefined(status))
+        if (!Enum.IsDefined(status) || status == LibraryCopyStatus.Issued)
         {
             return BadRequest();
         }
@@ -382,14 +382,18 @@ public sealed class IndexModel(
             .AsQueryable();
         if (!string.IsNullOrWhiteSpace(Search))
         {
-            var search = Search.Trim();
+            // Escape ILIKE wildcards so a literal % or _ matches literally.
+            var search = Search.Trim()
+                .Replace(@"\", @"\\")
+                .Replace("%", @"\%")
+                .Replace("_", @"\_");
             query = query.Where(x =>
-                EF.Functions.ILike(x.Title, $"%{search}%")
-                || EF.Functions.ILike(x.Author.Name, $"%{search}%")
+                EF.Functions.ILike(x.Title, $"%{search}%", @"\")
+                || EF.Functions.ILike(x.Author.Name, $"%{search}%", @"\")
                 || (x.Isbn != null
-                    && EF.Functions.ILike(x.Isbn, $"%{search}%"))
+                    && EF.Functions.ILike(x.Isbn, $"%{search}%", @"\"))
                 || (x.ShelfLocation != null
-                    && EF.Functions.ILike(x.ShelfLocation, $"%{search}%")));
+                    && EF.Functions.ILike(x.ShelfLocation, $"%{search}%", @"\")));
         }
 
         Titles = await query

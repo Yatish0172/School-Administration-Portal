@@ -184,6 +184,7 @@ public sealed class StandardReportService(
                 cancellationToken),
             "library-circulation" => await BuildLibraryCirculationAsync(
                 normalized,
+                scopedSectionIds,
                 cancellationToken),
             _ => throw new KeyNotFoundException($"Unknown report '{key}'."),
         };
@@ -517,6 +518,7 @@ public sealed class StandardReportService(
 
     private async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> BuildLibraryCirculationAsync(
         ReportFilters filters,
+        IReadOnlyCollection<Guid>? scopedSectionIds,
         CancellationToken cancellationToken)
     {
         var query = dbContext.Set<BookIssue>()
@@ -527,6 +529,13 @@ public sealed class StandardReportService(
         if (Enum.TryParse<BookIssueStatus>(filters.Status, true, out var status))
         {
             query = query.Where(x => x.Status == status);
+        }
+
+        if (scopedSectionIds is not null)
+        {
+            query = query.Where(x => x.Student.Enrollments.Any(enrollment =>
+                enrollment.Status == EnrollmentStatus.Active
+                && scopedSectionIds.Contains(enrollment.SectionId)));
         }
 
         var values = await query

@@ -61,6 +61,8 @@
                 button.dataset.capacity;
             document.getElementById("edit-section-teacher").value =
                 button.dataset.teacher || "";
+            document.getElementById("edit-section-active").value =
+                button.dataset.active === "true" ? "true" : "false";
         });
     });
     const assignmentClassChecks = [
@@ -114,6 +116,8 @@
             document.getElementById("edit-break-start").value =
                 button.dataset.start;
             document.getElementById("edit-break-end").value = button.dataset.end;
+            document.getElementById("edit-break-active").value =
+                button.dataset.active === "true" ? "true" : "false";
             syncBreakScope(document.getElementById("edit-break-scope"));
         });
     });

@@ -93,6 +93,15 @@ public sealed class LedgerModel(
             return Page();
         }
 
+        if (NewCharge.DueDate == default)
+        {
+            ModelState.AddModelError(
+                $"{nameof(NewCharge)}.{nameof(NewCharge.DueDate)}",
+                "Enter the due date for this charge.");
+            await LoadAsync(cancellationToken);
+            return Page();
+        }
+
         var enrollmentExists = await dbContext.Set<StudentEnrollment>()
             .AnyAsync(
                 x => x.Id == NewCharge.StudentEnrollmentId
@@ -217,6 +226,36 @@ public sealed class LedgerModel(
             return Page();
         }
 
+        // The enum binder silently falls back to the property default when the
+        // posted value is invalid, so the raw form value must be checked.
+        var rawMode = Request.Form[$"{nameof(Payment)}.{nameof(Payment.Mode)}"].ToString();
+        if (!Enum.TryParse<FeePaymentMode>(rawMode, ignoreCase: true, out var parsedMode)
+            || !Enum.IsDefined(parsedMode))
+        {
+            ModelState.AddModelError(
+                $"{nameof(Payment)}.{nameof(Payment.Mode)}",
+                "Choose a valid payment mode.");
+        }
+
+        if (Payment.PaymentDate == default)
+        {
+            ModelState.AddModelError(
+                $"{nameof(Payment)}.{nameof(Payment.PaymentDate)}",
+                "Enter the payment date.");
+        }
+        else if (Payment.PaymentDate > DateOnly.FromDateTime(DateTime.Today))
+        {
+            ModelState.AddModelError(
+                $"{nameof(Payment)}.{nameof(Payment.PaymentDate)}",
+                "The payment date cannot be in the future.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            await LoadAsync(cancellationToken);
+            return Page();
+        }
+
         try
         {
             var result = await postingService.PostAsync(
@@ -256,6 +295,15 @@ public sealed class LedgerModel(
         }
 
         EnrollmentId = enrollmentId;
+        if (ReversalReason.Length > 500)
+        {
+            ModelState.AddModelError(
+                nameof(ReversalReason),
+                "Keep the reversal reason under 500 characters.");
+            await LoadAsync(cancellationToken);
+            return Page();
+        }
+
         try
         {
             await postingService.ReverseAsync(

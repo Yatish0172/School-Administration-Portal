@@ -19,6 +19,7 @@
                         <div class="modal-body modal-form-grid">
                             <input asp-for="EditBreakPeriod.Id" type="hidden" id="edit-break-id" />
                             <input asp-for="EditBreakPeriod.Version" type="hidden" id="edit-break-version" />
+                            <input asp-for="EditBreakPeriod.IsActive" type="hidden" id="edit-break-active" />
                             <div><label asp-for="EditBreakPeriod.Name" class="form-label"></label><input asp-for="EditBreakPeriod.Name" class="form-control" id="edit-break-name" /></div>
                             <div><label asp-for="EditBreakPeriod.Scope" class="form-label"></label><select asp-for="EditBreakPeriod.Scope" class="form-select break-scope" id="edit-break-scope"><option value="AllClasses">All classes</option><option value="ClassRange">Class range</option></select></div>
                             <div class="break-range row g-3">

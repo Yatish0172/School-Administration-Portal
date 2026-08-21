@@ -125,8 +125,9 @@ public sealed class MarksModel(
                 "The class roster changed. Reload and try again.");
         }
 
-        foreach (var input in Entries)
+        for (var index = 0; index < Entries.Count; index++)
         {
+            var input = Entries[index];
             if (!input.IsAbsent
                 && input.MarksObtained.HasValue
                 && input.MarksObtained > examSubject.MaximumMarks)
@@ -134,6 +135,18 @@ public sealed class MarksModel(
                 ModelState.AddModelError(
                     string.Empty,
                     $"Marks cannot exceed {examSubject.MaximumMarks}.");
+            }
+
+            // A non-numeric value binds as null, which would otherwise be
+            // indistinguishable from an intentional blank and delete the mark.
+            var rawMarks = Request.Form[$"Entries[{index}].MarksObtained"].ToString();
+            if (!input.IsAbsent
+                && !input.MarksObtained.HasValue
+                && !string.IsNullOrWhiteSpace(rawMarks))
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Marks must be entered as a number.");
             }
         }
 

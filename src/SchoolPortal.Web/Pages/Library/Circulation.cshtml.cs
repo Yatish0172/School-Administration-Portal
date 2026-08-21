@@ -71,6 +71,16 @@ public sealed class CirculationModel(
             return Page();
         }
 
+        if (Issue.IssuedDate == default
+            || Issue.IssuedDate > DateOnly.FromDateTime(DateTime.Today))
+        {
+            ModelState.AddModelError(
+                $"{nameof(Issue)}.{nameof(Issue.IssuedDate)}",
+                "The issue date cannot be in the future.");
+            await LoadAsync(cancellationToken);
+            return Page();
+        }
+
         try
         {
             await circulationService.IssueAsync(
@@ -129,6 +139,16 @@ public sealed class CirculationModel(
         ModelState.Clear();
         if (!TryValidateModel(Return, nameof(Return)))
         {
+            await LoadAsync(cancellationToken);
+            return Page();
+        }
+
+        if (Return.ReturnedDate == default
+            || Return.ReturnedDate > DateOnly.FromDateTime(DateTime.Today))
+        {
+            ModelState.AddModelError(
+                $"{nameof(Return)}.{nameof(Return.ReturnedDate)}",
+                "The return date cannot be in the future.");
             await LoadAsync(cancellationToken);
             return Page();
         }

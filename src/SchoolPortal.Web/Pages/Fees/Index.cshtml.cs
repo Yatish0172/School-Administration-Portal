@@ -251,6 +251,7 @@ public sealed class IndexModel(
         var plan = await dbContext.Set<FeePlan>()
             .Include(x => x.Items)
                 .ThenInclude(x => x.FeeHead)
+            .Include(x => x.AcademicYear)
             .SingleOrDefaultAsync(x => x.Id == planId, cancellationToken);
         var section = await dbContext.Set<Section>()
             .SingleOrDefaultAsync(x => x.Id == sectionId, cancellationToken);
@@ -260,6 +261,12 @@ public sealed class IndexModel(
             || section.ClassId != plan.ClassId)
         {
             return NotFound();
+        }
+
+        if (plan.AcademicYear.Status == AcademicYearStatus.Closed)
+        {
+            StatusMessage = "Charges cannot be assigned for a closed academic year.";
+            return RedirectToPage(new { SelectedPlanId = plan.Id });
         }
 
         if (plan.Items.Count == 0)
@@ -317,7 +324,17 @@ public sealed class IndexModel(
                 ChargeCount = charges.Count,
                 EnrollmentCount = enrollments.Count,
             });
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            StatusMessage =
+                "Some charges were already assigned by another user. Review the section's charges.";
+            return RedirectToPage(new { SelectedPlanId = plan.Id });
+        }
+
         StatusMessage = charges.Count == 0
             ? "This plan was already assigned to every active student in the section."
             : $"{charges.Count} student charges created.";

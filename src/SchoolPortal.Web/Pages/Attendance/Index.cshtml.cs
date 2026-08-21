@@ -257,6 +257,13 @@ public sealed class IndexModel(
             return Page();
         }
 
+        if (!Enum.IsDefined(Correction.NewStatus))
+        {
+            ModelState.AddModelError(string.Empty, "Choose a valid status.");
+            await LoadAsync(cancellationToken);
+            return Page();
+        }
+
         if (!SchoolPortal.Web.Attendance.AttendanceAccessService.TryGetUserId(
             User,
             out var userId))
