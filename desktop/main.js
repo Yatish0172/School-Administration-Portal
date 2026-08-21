@@ -7,6 +7,10 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const { app, BrowserWindow, dialog, Menu, shell } = require('electron');
 
+// School office PCs often have unstable GPU drivers; software rendering
+// avoids the washed-out/dimmed window after a GPU device reset.
+app.disableHardwareAcceleration();
+
 const PORT = Number(process.env.SCHOOL_PORTAL_PORT || 5100);
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const READY_URL = `${BASE_URL}/health/ready`;
@@ -45,7 +49,7 @@ function requestStatus(url, timeoutMs = 2000) {
   });
 }
 
-async function waitForReady(timeoutMs = 45000) {
+async function waitForReady(timeoutMs = 150000) {
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < timeoutMs) {
@@ -60,7 +64,7 @@ async function waitForReady(timeoutMs = 45000) {
   }
 
   throw new Error(
-    'The portal backend did not become ready within 45 seconds.'
+    'The portal backend did not become ready within 150 seconds.'
   );
 }
 
